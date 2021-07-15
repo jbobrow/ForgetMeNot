@@ -1,6 +1,13 @@
+bool isCenter = false;
+bool isPetal = false;
+byte centerFace = 0;
+
+
+
+
+byte petalHues[4] = {131, 159, 180, 223};//light blue, dark blue, violet, pink
 
 bool canBloom = false;
-
 Timer bloomTimer;
 #define BLOOM_TIME 1000
 #define GREEN_HUE 77
@@ -8,13 +15,29 @@ Timer bloomTimer;
 
 void setup() {
   // put your setup code here, to run once:
-
+  randomize();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  setupLoop();
-  setupDisplay();
+  if (!isCenter && !isPetal) {//in pure setup mode
+    setupLoop();
+    setupDisplay();
+  } else if (isCenter) {
+    centerLoop();
+    centerDisplay();
+  } else {
+    petalLoop();
+    petalDisplay();
+  }
+
+
+  //do communication
+  setValueSentOnAllFaces(isCenter << 5);
+
+  //dump button presses
+  buttonSingleClicked();
+  buttonDoubleClicked();
+  buttonMultiClicked();
 }
 
 void setupLoop() {
@@ -22,6 +45,11 @@ void setupLoop() {
   FOREACH_FACE(f) {
     if (isValueReceivedOnFaceExpired(f)) {//no neighbor
       emptyNeighbor = true;
+    } else {
+      if (getIsCenter(getLastValueReceivedOnFace(f)) == true) {//this neighbor is telling me to play the game
+        isPetal = true;
+        centerFace = f;
+      }
     }
   }
 
@@ -33,6 +61,30 @@ void setupLoop() {
     }
     canBloom = true;
   }
+
+  if (canBloom) {
+    if (buttonSingleClicked()) {
+      isCenter = true;
+    }
+  }
+}
+
+void centerLoop() {
+
+}
+
+void petalLoop() {
+
+}
+
+void centerDisplay() {
+  setColor(makeColorHSB(YELLOW_HUE, 0, 255));
+  setColorOnFace(makeColorHSB(YELLOW_HUE, random(255), 255), random(5));
+}
+
+void petalDisplay() {
+  setColor(OFF);
+  setColorOnFace(makeColorHSB(GREEN_HUE, 255, 100), centerFace);
 }
 
 void setupDisplay() {
@@ -47,4 +99,8 @@ void setupDisplay() {
   } else {
     setColor(makeColorHSB(GREEN_HUE, 255, 100));
   }
+}
+
+byte getIsCenter(byte data) {
+  return (data >> 5);//returns the 1st bit
 }
