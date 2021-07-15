@@ -2,8 +2,8 @@ bool isCenter = false;
 bool isPetal = false;
 byte centerFace = 0;
 
-
-
+byte petalPacketStandard[5] = {0, 0, 0, 0, 0};
+byte petalPacketPrime[5] = {0, 0, 0, 0, 0};
 
 byte petalHues[4] = {131, 159, 180, 223};//light blue, dark blue, violet, pink
 
@@ -70,7 +70,8 @@ void setupLoop() {
 }
 
 void centerLoop() {
-
+//here we... huh
+//I guess we have to listen for a single click to start the thing
 }
 
 void petalLoop() {
@@ -78,8 +79,8 @@ void petalLoop() {
 }
 
 void centerDisplay() {
-  setColor(makeColorHSB(YELLOW_HUE, 0, 255));
-  setColorOnFace(makeColorHSB(YELLOW_HUE, random(255), 255), random(5));
+  setColor(makeColorHSB(YELLOW_HUE, 255, 255));
+  setColorOnFace(makeColorHSB(YELLOW_HUE, 0, 255), random(5));
 }
 
 void petalDisplay() {
