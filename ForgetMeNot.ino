@@ -89,8 +89,16 @@ void setupLoop() {
 void centerLoop() {
   if (gameState = CENTER) {
     //here we just wait for clicks to launch a new puzzle
+    if (buttonSingleClicked() || firstPuzzle) {
+      gameState = SENDING;
+      generatePuzzle();
+      firstPuzzle = false;
+    }
   } else if (gameState == SENDING) {
+    //here we just wait for all neighbors to go into PLAYING_PIECE
+    FOREACH_FACE(f) {
 
+    }
   } else if (gameState == PLAYING_PUZZLE) {
 
   }
