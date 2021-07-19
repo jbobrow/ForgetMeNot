@@ -1,9 +1,16 @@
-bool isCenter = false;
-bool isPetal = false;
+enum gameStates {SETUP, CENTER, SENDING, WAITING, PLAYING_PUZZLE, PLAYING_PIECE, ERR};
+byte gameState = SETUP;
+bool firstPuzzle = false;
+
+enum answerStates {INERT, CORRECT, WRONG, RESOLVE};
+byte answerState = INERT;
+
 byte centerFace = 0;
 
 byte petalPacketStandard[5] = {0, 0, 0, 0, 0};
 byte petalPacketPrime[5] = {0, 0, 0, 0, 0};
+
+byte currentPuzzleLevel = 0;
 
 byte petalHues[4] = {131, 159, 180, 223};//light blue, dark blue, violet, pink
 
@@ -19,20 +26,29 @@ void setup() {
 }
 
 void loop() {
-  if (!isCenter && !isPetal) {//in pure setup mode
-    setupLoop();
-    setupDisplay();
-  } else if (isCenter) {
-    centerLoop();
-    centerDisplay();
-  } else {
-    petalLoop();
-    petalDisplay();
+  switch (gameState) {
+    case SETUP:
+      setupLoop();
+      setupDisplay();
+      break;
+    case CENTER:
+    case SENDING:
+    case PLAYING_PUZZLE:
+      centerLoop();
+      centerDisplay();
+      break;
+    case WAITING:
+    case PLAYING_PIECE:
+      pieceLoop();
+      pieceDisplay();
+    case ERR:
+      break;
   }
 
 
   //do communication
-  setValueSentOnAllFaces(isCenter << 5);
+  byte sendData = (gameState << 3) | (answerState);
+  setValueSentOnAllFaces(sendData);
 
   //dump button presses
   buttonSingleClicked();
@@ -46,8 +62,8 @@ void setupLoop() {
     if (isValueReceivedOnFaceExpired(f)) {//no neighbor
       emptyNeighbor = true;
     } else {
-      if (getIsCenter(getLastValueReceivedOnFace(f)) == true) {//this neighbor is telling me to play the game
-        isPetal = true;
+      if (getGameState(getLastValueReceivedOnFace(f)) == SENDING || getGameState(getLastValueReceivedOnFace(f)) == CENTER) {//this neighbor is telling me to play the game
+        gameState = WAITING;
         centerFace = f;
       }
     }
@@ -64,29 +80,27 @@ void setupLoop() {
 
   if (canBloom) {
     if (buttonSingleClicked()) {
-      isCenter = true;
+      gameState = SENDING;
+      firstPuzzle = true;
     }
   }
 }
 
 void centerLoop() {
-//here we... huh
-//I guess we have to listen for a single click to start the thing
+  if (gameState = CENTER) {
+    //here we just wait for clicks to launch a new puzzle
+  } else if (gameState == SENDING) {
+
+  } else if (gameState == PLAYING_PUZZLE) {
+
+  }
 }
 
-void petalLoop() {
+void pieceLoop() {
 
 }
 
-void centerDisplay() {
-  setColor(makeColorHSB(YELLOW_HUE, 255, 255));
-  setColorOnFace(makeColorHSB(YELLOW_HUE, 0, 255), random(5));
-}
-
-void petalDisplay() {
-  setColor(OFF);
-  setColorOnFace(makeColorHSB(GREEN_HUE, 255, 100), centerFace);
-}
+////DISPLAY FUNCTIONS
 
 void setupDisplay() {
   if (canBloom) {
@@ -102,6 +116,22 @@ void setupDisplay() {
   }
 }
 
-byte getIsCenter(byte data) {
-  return (data >> 5);//returns the 1st bit
+void centerDisplay() {
+  setColor(makeColorHSB(YELLOW_HUE, 255, 255));
+  setColorOnFace(makeColorHSB(YELLOW_HUE, 0, 255), random(5));
+}
+
+void pieceDisplay() {
+  setColor(OFF);
+  setColorOnFace(makeColorHSB(GREEN_HUE, 255, 100), centerFace);
+}
+
+////CONVENIENCE FUNCTIONS
+
+byte getGameState(byte data) {
+  return (data >> 3);//returns the 1st, 2nd, and 3rd bit
+}
+
+byte getAnswerState(byte data) {
+  return (data & 7);//returns the 5th and 6th bit
 }
