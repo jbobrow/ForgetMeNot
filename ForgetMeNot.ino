@@ -45,6 +45,7 @@ void loop() {
       break;
   }
 
+  answerLoop();
 
   //do communication
   byte sendData = (gameState << 3) | (answerState);
@@ -96,16 +97,121 @@ void centerLoop() {
     }
   } else if (gameState == SENDING) {
     //here we just wait for all neighbors to go into PLAYING_PIECE
-    FOREACH_FACE(f) {
 
+    byte piecesPlaying = 0;
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {//a neighbor! this actually needs to always be true, or else we're in trouble
+        byte neighborData = getLastValueReceivedOnFace(f);
+        if (getGameState(neighborData) == PLAYING_PIECE) {
+          piecesPlaying++;
+        }
+      }
     }
+
+    if (piecesPlaying == 6) {//all of the pieces have gone into playing, so can we
+      gameState = PLAYING_PUZZLE;
+    }
+
   } else if (gameState == PLAYING_PUZZLE) {
+    //so in here, we just kinda hang out and wait to do... something?
+    //I guess here we just listen for RIGHT/WRONG signals?
+    //and I guess eventually ERROR HANDLING
+
+    if (buttonDoubleClicked()) {//here we reveal the correct answer and move forward
+      answerState = CORRECT;
+      gameState = CENTER;
+    }
+
 
   }
 }
 
-void pieceLoop() {
+void generatePuzzle() {
 
+}
+
+void pieceLoop() {
+  if (gameState == WAITING) {//check for datagrams, then go into playing
+    //TODO: datagram check
+    bool datagramReceived = true;
+
+    if (datagramReceived) {
+      gameState = PLAYING_PIECE;
+    }
+  } else if (gameState == PLAYING_PIECE) {//I guess just listen for clicks and signals?
+    if (buttonSingleClicked()) {
+      //is this right or wrong?
+      //TODO: actually have an answer to this. For now... we'll just do a 50/50 split
+      bool isCorrect = random(1);
+      if (isCorrect) {
+        answerState = CORRECT;
+      } else {
+        answerState = WRONG;
+      }
+      gameState = WAITING;
+    }
+  }
+
+}
+
+void answerLoop() {
+  //so we gotta just listen around for all these signals
+  if (answerState == INERT) {//listen for CORRECT or WRONG
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {
+        byte neighborAnswer = getAnswerState(getLastValueReceivedOnFace(f));
+        if (neighborAnswer == CORRECT || neighborAnswer == WRONG) {
+          answerState = neighborAnswer;
+
+          if (gameState == PLAYING_PIECE) {
+            gameState = WAITING;
+          } else if (gameState == PLAYING_PUZZLE) {
+            gameState = CENTER;
+          }
+        }
+      }
+    }
+  } else if (answerState == CORRECT || answerState == WRONG) {//just wait to go to RESOLVE
+    if (gameState == PLAYING_PIECE) {
+      gameState = WAITING;
+    } else if (gameState == PLAYING_PUZZLE) {
+      gameState = CENTER;
+    }
+
+    bool canResolve = true;
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {
+        byte neighborAnswer = getAnswerState(getLastValueReceivedOnFace(f));
+        if (neighborAnswer == INERT) {
+          canResolve = false;
+        }
+      }
+    }
+
+    if (canResolve) {
+      answerState = RESOLVE;
+    }
+  } else if (answerState == RESOLVE) {//wait to go to INERT
+    if (gameState == PLAYING_PIECE) {
+      gameState = WAITING;
+    } else if (gameState == PLAYING_PUZZLE) {
+      gameState = CENTER;
+    }
+
+    bool canInert = true;
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {
+        byte neighborAnswer = getAnswerState(getLastValueReceivedOnFace(f));
+        if (neighborAnswer != INERT && neighborAnswer != RESOLVE) {
+          canInert = false;
+        }
+      }
+    }
+
+    if (canInert) {
+      answerState = RESOLVE;
+    }
+  }
 }
 
 ////DISPLAY FUNCTIONS
@@ -125,13 +231,37 @@ void setupDisplay() {
 }
 
 void centerDisplay() {
-  setColor(makeColorHSB(YELLOW_HUE, 255, 255));
-  setColorOnFace(makeColorHSB(YELLOW_HUE, 0, 255), random(5));
+  //so we need some temp graphics
+  switch (gameState) {
+    case CENTER:
+      setColor(YELLOW);
+      setColorOnFace(WHITE, random(5));
+      break;
+    case SENDING:
+      setColor(dim(YELLOW, 100));
+      break;
+    case PLAYING_PUZZLE:
+      setColor(YELLOW);
+      break;
+  }
+  //setColor(makeColorHSB(YELLOW_HUE, 255, 255));
+  //setColorOnFace(makeColorHSB(YELLOW_HUE, 0, 255), random(5));
 }
 
 void pieceDisplay() {
-  setColor(OFF);
-  setColorOnFace(makeColorHSB(GREEN_HUE, 255, 100), centerFace);
+  //some temp graphics
+  switch (gameState) {
+    case WAITING:
+      setColor(OFF);
+      setColorOnFace(GREEN, centerFace);
+      break;
+    case PLAYING_PIECE:
+      setColor(CYAN);
+      break;
+  }
+
+  //  setColor(OFF);
+  //  setColorOnFace(makeColorHSB(GREEN_HUE, 255, 100), centerFace);
 }
 
 ////CONVENIENCE FUNCTIONS
