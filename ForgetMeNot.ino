@@ -7,8 +7,8 @@ byte answerState = INERT;
 
 byte centerFace = 0;
 
-byte petalPacketStandard[5] = {0, 0, 0, 0, 0};
-byte petalPacketPrime[5] = {0, 0, 0, 0, 0};
+byte petalPacketStandard[6] = {0, 0, 0, 0, 0, 0};
+byte petalPacketPrime[6] = {0, 0, 0, 0, 0, 0};
 
 byte currentPuzzleLevel = 0;
 
@@ -126,14 +126,31 @@ void centerLoop() {
   }
 }
 
-void generatePuzzle() {
+byte puzzleInfo[6] = {0, 0, 0, 0, 0, 0};
 
+void generatePuzzle() {
+  FOREACH_FACE(f) {
+    sendDatagramOnFace( &petalPacketStandard, sizeof(petalPacketStandard), f);
+  }
 }
 
 void pieceLoop() {
   if (gameState == WAITING) {//check for datagrams, then go into playing
-    //TODO: datagram check
-    bool datagramReceived = true;
+    //listen for a packet on master face
+    bool datagramReceived = false;
+
+    if (isDatagramReadyOnFace(centerFace)) {//is there a packet?
+      if (getDatagramLengthOnFace(centerFace) == 6) {//is it the right length?
+        byte *data = (byte *) getDatagramOnFace(centerFace);//grab the data
+        markDatagramReadOnFace(centerFace);
+        FOREACH_FACE(f) {
+          puzzleInfo[f] = data[f];
+        }
+
+        datagramReceived = true;
+      }
+    }
+
 
     if (datagramReceived) {
       gameState = PLAYING_PIECE;
@@ -209,7 +226,7 @@ void answerLoop() {
     }
 
     if (canInert) {
-      answerState = RESOLVE;
+      answerState = INERT;
     }
   }
 }
@@ -257,6 +274,23 @@ void pieceDisplay() {
       break;
     case PLAYING_PIECE:
       setColor(CYAN);
+      break;
+  }
+
+  //temp answer display
+  byte oppFace = (centerFace + 3) % 6;
+  switch (answerState) {
+    case INERT:
+      setColorOnFace(WHITE, oppFace);
+      break;
+    case CORRECT:
+      setColorOnFace(GREEN, oppFace);
+      break;
+    case WRONG:
+      setColorOnFace(RED, oppFace);
+      break;
+    case RESOLVE:
+      setColorOnFace(BLUE, oppFace);
       break;
   }
 
