@@ -129,8 +129,17 @@ void centerLoop() {
 byte puzzleInfo[6] = {0, 0, 0, 0, 0, 0};
 
 void generatePuzzle() {
+  byte primePiece = random(5);//which face will have the correct answer?
+
+  //TODO: difficulty algorithm
+  //needs to choose a puzzle type, a color scheme, set the timers, and 
+
   FOREACH_FACE(f) {
-    sendDatagramOnFace( &petalPacketStandard, sizeof(petalPacketStandard), f);
+    if (f == primePiece) {
+      sendDatagramOnFace( &petalPacketPrime, sizeof(petalPacketPrime), f);
+    } else {
+      sendDatagramOnFace( &petalPacketStandard, sizeof(petalPacketStandard), f);
+    }
   }
 }
 
