@@ -60,6 +60,7 @@ void loop() {
     case PLAYING_PIECE:
       pieceLoop();
       pieceDisplay();
+      break;
     case ERR:
       break;
   }
@@ -100,14 +101,14 @@ void setupLoop() {
 
   if (canBloom) {
     if (buttonSingleClicked()) {
-      gameState = SENDING;
+      gameState = CENTER;
       firstPuzzle = true;
     }
   }
 }
 
 void centerLoop() {
-  if (gameState = CENTER) {
+  if (gameState == CENTER) {
     //here we just wait for clicks to launch a new puzzle
     if (buttonSingleClicked() || firstPuzzle) {
       gameState = SENDING;
