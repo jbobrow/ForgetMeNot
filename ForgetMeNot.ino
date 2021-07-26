@@ -7,12 +7,31 @@ byte answerState = INERT;
 
 byte centerFace = 0;
 
-byte petalPacketStandard[6] = {0, 0, 0, 0, 0, 0};
-byte petalPacketPrime[6] = {0, 0, 0, 0, 0, 0};
+//PACKET ARRANGEMENT: puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
+byte petalPacketStandard[6] = {0, 0, 0, 0, 100, 100};
+byte petalPacketPrime[6] = {0, 0, 0, 1, 100, 100};
 
 byte currentPuzzleLevel = 0;
+Timer puzzleTimer;
 
-byte petalHues[4] = {131, 159, 180, 223};//light blue, dark blue, violet, pink
+//byte petalHues[4] = {131, 159, 180, 223};//light blue, dark blue, violet, pink
+
+#define PINK2 makeColorRGB(255,50,100)
+#define PINK4 makeColorRGB(255,100,255)
+#define PINK6 makeColorRGB(255,200,255)
+#define PINK3 makeColorRGB(255,0,100)
+#define PINK1 makeColorRGB(255,50,0)
+#define PINK5 makeColorRGB(150,50,255)
+
+#define BLUE1 makeColorRGB(0,150,255)
+#define BLUE2 makeColorRGB(50,100,255)
+#define BLUE3 makeColorRGB(50,0,255)
+#define BLUE4 makeColorRGB(100,10,255)
+#define BLUE5 makeColorRGB(150,100,255)
+#define BLUE6 makeColorRGB(200,200,255)
+
+Color pinkColors[6] = {PINK1, PINK2, PINK3, PINK4, PINK5, PINK6};
+Color blueColors[6] = {BLUE1, BLUE2, BLUE3, BLUE4, BLUE5, BLUE6};
 
 bool canBloom = false;
 Timer bloomTimer;
@@ -127,12 +146,14 @@ void centerLoop() {
 }
 
 byte puzzleInfo[6] = {0, 0, 0, 0, 0, 0};
+byte stageOneData = 0;
+byte stageTwoData = 0;
 
 void generatePuzzle() {
   byte primePiece = random(5);//which face will have the correct answer?
 
   //TODO: difficulty algorithm
-  //needs to choose a puzzle type, a color scheme, set the timers, and 
+  //needs to choose a puzzle type, a color scheme, set the timers, and
 
   FOREACH_FACE(f) {
     if (f == primePiece) {
@@ -163,6 +184,12 @@ void pieceLoop() {
 
     if (datagramReceived) {
       gameState = PLAYING_PIECE;
+      //quickly do some figuring out based on puzzle figuring
+      stageOneData = determineStages(puzzleInfo[0], puzzleInfo[2], puzzleInfo[3], 1);
+      stageTwoData = determineStages(puzzleInfo[0], puzzleInfo[2], puzzleInfo[3], 2);
+
+      //BEGIN SHOWING THE PUZZLE!
+      puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5]) * 10);//the timing within the datagram is reduced
     }
   } else if (gameState == PLAYING_PIECE) {//I guess just listen for clicks and signals?
     if (buttonSingleClicked()) {
@@ -178,6 +205,20 @@ void pieceLoop() {
     }
   }
 
+}
+
+byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
+  if (stage == 1) {
+    //TODO: more complicated build here
+    return (random(5));
+  } else {//only change answer if amAnswer
+    if (amAnswer) {
+      //TODO: need to consider difficulty level here
+      return ((stageOneData + random(4) + 1) % 6);
+    } else {
+      return (stageOneData);
+    }
+  }
 }
 
 void answerLoop() {
@@ -275,36 +316,39 @@ void centerDisplay() {
 }
 
 void pieceDisplay() {
-  //some temp graphics
-  switch (gameState) {
-    case WAITING:
+
+  //TODO: break this into puzzle type specific displays
+  if (gameState == WAITING) {//just waiting
+    setColor(OFF);
+    setColorOnFace(GREEN, centerFace);
+  } else {//show the puzzle
+    if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
+      //TODO: take into account color palette, defaulting to pink for now
+      setColor(pinkColors[stageOneData]);
+    } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5] * 10)) {//show darkness with a little flower bit
       setColor(OFF);
-      setColorOnFace(GREEN, centerFace);
-      break;
-    case PLAYING_PIECE:
-      setColor(CYAN);
-      break;
+      setColorOnFace(dim(GREEN, 100), centerFace);
+    } else {//show the first stage of the puzzle
+      setColor(pinkColors[stageTwoData]);
+    }
   }
 
   //temp answer display
-  byte oppFace = (centerFace + 3) % 6;
-  switch (answerState) {
-    case INERT:
-      setColorOnFace(WHITE, oppFace);
-      break;
-    case CORRECT:
-      setColorOnFace(GREEN, oppFace);
-      break;
-    case WRONG:
-      setColorOnFace(RED, oppFace);
-      break;
-    case RESOLVE:
-      setColorOnFace(BLUE, oppFace);
-      break;
-  }
-
-  //  setColor(OFF);
-  //  setColorOnFace(makeColorHSB(GREEN_HUE, 255, 100), centerFace);
+  //  byte oppFace = (centerFace + 3) % 6;
+  //  switch (answerState) {
+  //    case INERT:
+  //      setColorOnFace(WHITE, oppFace);
+  //      break;
+  //    case CORRECT:
+  //      setColorOnFace(GREEN, oppFace);
+  //      break;
+  //    case WRONG:
+  //      setColorOnFace(RED, oppFace);
+  //      break;
+  //    case RESOLVE:
+  //      setColorOnFace(BLUE, oppFace);
+  //      break;
+  //  }
 }
 
 ////CONVENIENCE FUNCTIONS
