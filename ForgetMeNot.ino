@@ -385,11 +385,12 @@ void pieceDisplay() {
   } else {//show the puzzle
     if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
       //TODO: take into account color palette, defaulting to pink for now
-      setColor(primaryColors[stageOneData]); //setColor(pinkColors[stageOneData]);
+      setColor(primaryColors[stageTwoData]); //setColor(pinkColors[stageOneData]);
     } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5] * 10)) {//show darkness with a little flower bit
       setColor(OFF);
       setColorOnFace(dim(GREEN, 100), centerFace);
     } else {//show the first stage of the puzzle
+      setColor(primaryColors[stageOneData]);
     }
   }
 
