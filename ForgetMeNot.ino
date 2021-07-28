@@ -42,7 +42,7 @@ bool canBloom = false;
 Timer bloomTimer;
 #define BLOOM_TIME 1000
 #define GREEN_HUE 77
-#define YELLOW_HUE 0
+#define YELLOW_HUE 42
 
 
 //Puzzle levels
