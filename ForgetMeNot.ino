@@ -1,4 +1,4 @@
-enum gameStates {SETUP, CENTER, SENDING, WAITING, PLAYING_PUZZLE, PLAYING_PIECE, ERR};
+enum gameStates {SETUP, CENTER, SENDING, WAITING, PLAYING_PUZZLE, PLAYING_PIECE, ERR, SCORE_SENDING, SCORE_WAITING, SCORESHOW_CENTER, SCORESHOW_PIECE};
 byte gameState = SETUP;
 bool firstPuzzle = false;
 
@@ -89,6 +89,16 @@ void loop() {
       pieceLoop();
       pieceDisplay();
       break;
+    case SCORE_SENDING:
+    case SCORESHOW_CENTER:
+      scoreCenterLoop();
+      scoreCenterDisplay();
+      break;
+    case SCORE_WAITING:
+    case SCORESHOW_PIECE:
+      scorePieceLoop();
+      scorePieceDisplay();
+      break;
     case ERR:
       break;
   }
@@ -96,7 +106,7 @@ void loop() {
   answerLoop();
 
   //do communication
-  byte sendData = (gameState << 3) | (answerState);
+  byte sendData = (gameState << 2) | (answerState);
   setValueSentOnAllFaces(sendData);
 
   //dump button presses
@@ -353,6 +363,24 @@ void answerLoop() {
   }
 }
 
+void scoreCenterLoop() {
+  //so here we send datagrams and then just... HANG
+  if (gameState == SCORE_SENDING) {
+
+  } else if (gameState == SCORESHOW_CENTER) {
+
+  }
+}
+
+void scorePieceLoop() {
+  //here we wait for datagrams and then just... HANG
+  if (gameState == SCORE_WAITING) {
+
+  } else if (gameState == SCORESHOW_PIECE) {
+
+  }
+}
+
 ////DISPLAY FUNCTIONS
 
 void setupDisplay() {
@@ -384,8 +412,8 @@ void centerDisplay() {
         setColorOnFace(WHITE, random(5));
       }
 
-//      //TEMP SCORE DISPLAY
-//      setColorOnFace(BLUE, currentPuzzleLevel % 6);
+      //      //TEMP SCORE DISPLAY
+      //      setColorOnFace(BLUE, currentPuzzleLevel % 6);
       break;
     case SENDING:
       setColor(YELLOW);
@@ -452,10 +480,19 @@ void pieceDisplay() {
   //  }
 }
 
+void scoreCenterDisplay() {
+  setColor(MAGENTA);
+}
+
+void scorePieceDisplay() {
+  setColor(OFF);
+  setColorOnFace(MAGENTA, centerFace);
+}
+
 ////CONVENIENCE FUNCTIONS
 
 byte getGameState(byte data) {
-  return (data >> 3);//returns the 1st, 2nd, and 3rd bit
+  return (data >> 2);//returns the 1st, 2nd, 3rd, and 4th bit
 }
 
 byte getAnswerState(byte data) {
