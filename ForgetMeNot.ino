@@ -334,22 +334,7 @@ void pieceDisplay() {
     }
   }
 
-  //temp answer display
-  //  byte oppFace = (centerFace + 3) % 6;
-  //  switch (answerState) {
-  //    case INERT:
-  //      setColorOnFace(WHITE, oppFace);
-  //      break;
-  //    case CORRECT:
-  //      setColorOnFace(GREEN, oppFace);
-  //      break;
-  //    case WRONG:
-  //      setColorOnFace(RED, oppFace);
-  //      break;
-  //    case RESOLVE:
-  //      setColorOnFace(BLUE, oppFace);
-  //      break;
-  //  }
+
 }
 
 ////CONVENIENCE FUNCTIONS
