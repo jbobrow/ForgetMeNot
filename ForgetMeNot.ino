@@ -272,12 +272,12 @@ void pieceLoop() {
       if (isCorrect) {
         answerState = CORRECT;
         answerTimer.set(2000);   //set answer timer for display
-      gameState = WAITING;
+        gameState = WAITING;
       } else {
         answerState = WRONG;
         gameState = SCORE_WAITING;
       }
-      
+
     }
   }
 
@@ -368,18 +368,40 @@ void answerLoop() {
 void scoreCenterLoop() {
   //so here we send datagrams and then just... HANG
   if (gameState == SCORE_SENDING) {
+    //we just wait here until all of our neighbors are in SCORESHOW_PIECE
+    byte piecesShowing = 0;
+    byte whoShowing[6] = {false, false, false, false, false, false};
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {//a neighbor! this actually needs to always be true, or else we're in trouble
+        byte neighborData = getLastValueReceivedOnFace(f);
+        if (getGameState(neighborData) == SCORESHOW_PIECE) {
+          piecesShowing++;
+          whoShowing[f] = true;
+        }
+      }
+    }
+
+    if (piecesShowing == 6) {//all of the pieces have gone into playing, so can we
+      gameState = SCORESHOW_CENTER;
+    }
 
   } else if (gameState == SCORESHOW_CENTER) {
-
+    //I guess nothing happens here, we're just waiting for clicks to go back to SETUP
   }
 }
 
 void scorePieceLoop() {
   //here we wait for datagrams and then just... HANG
   if (gameState == SCORE_WAITING) {
+    //waiting to get a datagram, which we will fake for now
+    //TODO: real datagram stuff
+    bool datagramReceived = true;
 
+    if (datagramReceived) {
+      gameState = SCORESHOW_PIECE;
+    }
   } else if (gameState == SCORESHOW_PIECE) {
-
+    //also nothing happens here, just waiting for clicks to go back to SETUP
   }
 }
 
@@ -483,12 +505,22 @@ void pieceDisplay() {
 }
 
 void scoreCenterDisplay() {
-  setColor(MAGENTA);
+  if (gameState == SCORE_SENDING) {
+    setColor(MAGENTA);
+  } else {
+    setColor(MAGENTA);
+    setColorOnFace(WHITE, random(5));
+  }
 }
 
 void scorePieceDisplay() {
-  setColor(OFF);
-  setColorOnFace(MAGENTA, centerFace);
+  if (gameState == SCORE_WAITING) {
+    setColor(OFF);
+    setColorOnFace(MAGENTA, centerFace);
+  } else {
+    setColor(MAGENTA);
+    setColorOnFace(WHITE, centerFace);
+  }
 }
 
 ////CONVENIENCE FUNCTIONS
