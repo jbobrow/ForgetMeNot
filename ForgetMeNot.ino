@@ -271,11 +271,13 @@ void pieceLoop() {
 
       if (isCorrect) {
         answerState = CORRECT;
+        answerTimer.set(2000);   //set answer timer for display
+      gameState = WAITING;
       } else {
         answerState = WRONG;
+        gameState = SCORE_WAITING;
       }
-      answerTimer.set(2000);   //set answer timer for display
-      gameState = WAITING;
+      
     }
   }
 
@@ -496,5 +498,5 @@ byte getGameState(byte data) {
 }
 
 byte getAnswerState(byte data) {
-  return (data & 7);//returns the 5th and 6th bit
+  return (data & 3);//returns the 5th and 6th bit
 }
