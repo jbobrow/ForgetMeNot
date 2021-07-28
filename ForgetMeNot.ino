@@ -298,28 +298,15 @@ void answerLoop() {
         if (neighborAnswer == CORRECT || neighborAnswer == WRONG) {
           answerState = neighborAnswer;
           answerTimer.set(2000);
-
-          if (gameState == PLAYING_PIECE) {
-            gameState = WAITING;
-          } else if (gameState == PLAYING_PUZZLE) {
-            gameState = CENTER;
-            //determine score incrementing
-            if (neighborAnswer == CORRECT) {
-              //increment the score!
-              currentPuzzleLevel++;
-            } else {
-              currentPuzzleLevel = 0;
-            }
-
-          }
         }
       }
     }
-  } else if (answerState == CORRECT || answerState == WRONG) {//just wait to go to RESOLVE
+  } else if (answerState == CORRECT) {//just wait to go to RESOLVE
     if (gameState == PLAYING_PIECE) {
       gameState = WAITING;
     } else if (gameState == PLAYING_PUZZLE) {
       gameState = CENTER;
+      currentPuzzleLevel++;
     }
 
     bool canResolve = true;
@@ -335,6 +322,14 @@ void answerLoop() {
     if (canResolve) {
       answerState = RESOLVE;
     }
+  } else if (answerState == WRONG) {
+    //oh, we've gotten one wrong - TIME TO GO TO SCOREBOARD
+    if (gameState == PLAYING_PIECE) {
+      gameState = SCORE_WAITING;
+    } else if (gameState == PLAYING_PUZZLE) {
+      gameState = SCORE_SENDING;
+    }
+
   } else if (answerState == RESOLVE) {//wait to go to INERT
     if (gameState == PLAYING_PIECE) {
       gameState = WAITING;
