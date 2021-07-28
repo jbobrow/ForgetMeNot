@@ -42,7 +42,7 @@ bool canBloom = false;
 Timer bloomTimer;
 #define BLOOM_TIME 1000
 #define GREEN_HUE 77
-#define YELLOW_HUE 42
+#define YELLOW_HUE 0
 
 
 //Puzzle levels
@@ -83,11 +83,13 @@ void loop() {
     case PLAYING_PUZZLE:
       centerLoop();
       centerDisplay();
+      answerLoop();
       break;
     case WAITING:
     case PLAYING_PIECE:
       pieceLoop();
       pieceDisplay();
+      answerLoop();
       break;
     case SCORE_SENDING:
     case SCORESHOW_CENTER:
@@ -103,7 +105,7 @@ void loop() {
       break;
   }
 
-  answerLoop();
+
 
   //do communication
   byte sendData = (gameState << 2) | (answerState);
@@ -366,6 +368,7 @@ void answerLoop() {
 }
 
 void scoreCenterLoop() {
+
   //so here we send datagrams and then just... HANG
   if (gameState == SCORE_SENDING) {
     //we just wait here until all of our neighbors are in SCORESHOW_PIECE
@@ -386,7 +389,23 @@ void scoreCenterLoop() {
     }
 
   } else if (gameState == SCORESHOW_CENTER) {
+    //the jump to scoreboard leaves answerLoop hanging - drop into INERT here
+    answerState = INERT;
+
     //I guess nothing happens here, we're just waiting for clicks to go back to SETUP
+    if (buttonSingleClicked()) {
+      gameState = SETUP;
+    }
+
+    //also look around for SETUP blinks
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {//a neighbor! this actually needs to always be true, or else we're in trouble
+        byte neighborData = getLastValueReceivedOnFace(f);
+        if (getGameState(neighborData) == SETUP) {
+          gameState = SETUP;
+        }
+      }
+    }
   }
 }
 
@@ -401,7 +420,24 @@ void scorePieceLoop() {
       gameState = SCORESHOW_PIECE;
     }
   } else if (gameState == SCORESHOW_PIECE) {
-    //also nothing happens here, just waiting for clicks to go back to SETUP
+    //the jump to scoreboard leaves answerLoop hanging - drop into INERT here
+    answerState = INERT;
+
+    //I guess nothing happens here, we're just waiting for clicks to go back to SETUP
+    //TODO: THIS CODE IS DUPLICATED IN THE LOOP ABOVE, SHOULD CONSOLIDATE
+    if (buttonSingleClicked()) {
+      gameState = SETUP;
+    }
+
+    //also look around for SETUP blinks
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {//a neighbor! this actually needs to always be true, or else we're in trouble
+        byte neighborData = getLastValueReceivedOnFace(f);
+        if (getGameState(neighborData) == SETUP) {
+          gameState = SETUP;
+        }
+      }
+    }
   }
 }
 
