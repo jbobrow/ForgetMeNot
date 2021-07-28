@@ -15,6 +15,7 @@ byte petalPacketPrime[6] = {0, 0, 0, 1, showTime, darkTime};
 
 byte currentPuzzleLevel = 0;
 Timer puzzleTimer;
+bool puzzleStarted = false;
 Timer answerTimer;
 
 //byte petalHues[4] = {131, 159, 180, 223};//light blue, dark blue, violet, pink
@@ -51,8 +52,9 @@ Timer bloomTimer;
 // locationPetals:  one side on each petal is lit, and changes position
 // animationPetlas: a basic animation clockwise or counterclockwise on each petal... one changes
 // globalPetals: a
-enum puzzleType {colorPetals, locationPetals, animationPetals, globalPetals, 
-                  flashPetals, changeingPetals, animationPetals2, numPetals};
+enum puzzleType {colorPetals, locationPetals, animationPetals, globalPetals,
+                 flashPetals, changeingPetals, animationPetals2, numPetals
+                };
 enum puzzlePallette  {primary, pink, blue};
 
 // beginner: pick from two colours
@@ -133,6 +135,13 @@ void setupLoop() {
   }
 }
 
+Timer datagramTimer;
+#define DATAGRAM_TIMEOUT 250
+byte puzzleInfo[6] = {0, 0, 0, 0, 0, 0};
+byte stageOneData = 0;
+byte stageTwoData = 0;
+byte answerFace = 0;
+
 void centerLoop() {
   if (gameState == CENTER) {
     //here we just wait for clicks to launch a new puzzle
@@ -140,16 +149,19 @@ void centerLoop() {
       gameState = SENDING;
       generatePuzzle();
       firstPuzzle = false;
+      datagramTimer.set(DATAGRAM_TIMEOUT);
     }
   } else if (gameState == SENDING) {
     //here we just wait for all neighbors to go into PLAYING_PIECE
 
     byte piecesPlaying = 0;
+    byte whoPlaying[6] = {false, false, false, false, false, false};
     FOREACH_FACE(f) {
       if (!isValueReceivedOnFaceExpired(f)) {//a neighbor! this actually needs to always be true, or else we're in trouble
         byte neighborData = getLastValueReceivedOnFace(f);
         if (getGameState(neighborData) == PLAYING_PIECE) {
           piecesPlaying++;
+          whoPlaying[f] = true;
         }
       }
     }
@@ -158,14 +170,24 @@ void centerLoop() {
       gameState = PLAYING_PUZZLE;
     }
 
+    if (datagramTimer.isExpired()) {
+      //huh, so we still aren't playing
+      //who needs a datagram again?
+      FOREACH_FACE(f) {
+        if (whoPlaying[f] == false) {
+          if (f == answerFace) {
+            sendDatagramOnFace( &petalPacketPrime, sizeof(petalPacketPrime), f);
+          } else {
+            sendDatagramOnFace( &petalPacketStandard, sizeof(petalPacketStandard), f);
+          }
+        }
+      }
+    }
+
   } else if (gameState == PLAYING_PUZZLE) {
     //so in here, we just kinda hang out and wait to do... something?
     //I guess here we just listen for RIGHT/WRONG signals?
     //and I guess eventually ERROR HANDLING
-
-    if (buttonSingleClicked()) {//Use a life and replay puzzle TODO
-      
-    }
 
     if (buttonDoubleClicked()) {//here we reveal the correct answer and move forward
       answerState = CORRECT;
@@ -177,18 +199,18 @@ void centerLoop() {
   }
 }
 
-byte puzzleInfo[6] = {0, 0, 0, 0, 0, 0};
-byte stageOneData = 0;
-byte stageTwoData = 0;
+
 
 void generatePuzzle() {
-  byte primePiece = random(5);//which face will have the correct answer?
 
   //TODO: difficulty algorithm
-  //needs to choose a puzzle type, a color scheme, set the timers, and
+  //needs to choose a puzzle type, a color scheme, set the timers, and choose an answer
+
+
+  answerFace = random(5);//which face will have the correct answer?
 
   FOREACH_FACE(f) {
-    if (f == primePiece) {
+    if (f == answerFace) {
       sendDatagramOnFace( &petalPacketPrime, sizeof(petalPacketPrime), f);
     } else {
       sendDatagramOnFace( &petalPacketStandard, sizeof(petalPacketStandard), f);
@@ -219,16 +241,23 @@ void pieceLoop() {
       //quickly do some figuring out based on puzzle figuring
       stageOneData = determineStages(puzzleInfo[0], puzzleInfo[2], puzzleInfo[3], 1);
       stageTwoData = determineStages(puzzleInfo[0], puzzleInfo[2], puzzleInfo[3], 2);
+      puzzleStarted = false;
 
-      //BEGIN SHOWING THE PUZZLE!
-      puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5]) * 10);//the timing within the datagram is reduced
     }
   } else if (gameState == PLAYING_PIECE) {//I guess just listen for clicks and signals?
+
+    //start the puzzle if the center wants me to start
+    if (puzzleTimer.isExpired() && getGameState(getLastValueReceivedOnFace(centerFace)) == PLAYING_PUZZLE && puzzleStarted == false) {//I have not started the puzzle, but the center wants me to
+      //BEGIN SHOWING THE PUZZLE!
+      puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5]) * 10);//the timing within the datagram is reduced
+      puzzleStarted = true;
+    }
+
     if (buttonSingleClicked()) {
       //is this right or wrong?
       //TODO: actually have an answer to this. For now... we'll just do a 50/50 split
       //bool isCorrect = random(1);
-      bool isCorrect = (puzzleInfo[3]!=0);
+      bool isCorrect = (puzzleInfo[3] != 0);
 
       if (isCorrect) {
         answerState = CORRECT;
@@ -252,7 +281,7 @@ byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
       //return ((stageOneData + random(2) + 1) % 4); // moded for 4 color puzzle
       do {
         stageTwoData = random(3);
-      } while( stageTwoData == stageOneData);
+      } while ( stageTwoData == stageOneData);
       return (stageTwoData);
     } else {
       return (stageOneData);
@@ -346,14 +375,14 @@ void centerDisplay() {
           setColor(GREEN);
         } else if (answerState == WRONG) {
           setColor(RED);
-        }      
+        }
       } else {
         setColor(YELLOW);
         setColorOnFace(WHITE, random(5));
       }
       break;
     case SENDING:
-      setColor(dim(YELLOW, 100));
+      setColor(YELLOW);
       break;
     case PLAYING_PUZZLE:
       setColor(YELLOW);
@@ -367,30 +396,35 @@ void pieceDisplay() {
 
   //TODO: break this into puzzle type specific displays
   if (gameState == WAITING) {//just waiting
-    
+
     //setColor(OFF);
     //setColorOnFace(GREEN, centerFace);
-    if (!answerTimer.isExpired()){
-          if (answerState == CORRECT) {
-             setColor(GREEN);
-          } else if (answerState == WRONG) {
-             setColor(RED);
-          }
+    if (!answerTimer.isExpired()) {
+      if (answerState == CORRECT) {
+        setColor(GREEN);
+      } else if (answerState == WRONG) {
+        setColor(RED);
+      }
     } else {
       setColor(OFF);
       setColorOnFace(GREEN, centerFace);
     }
-    
-    
+
+
   } else {//show the puzzle
-    if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
-      //TODO: take into account color palette, defaulting to pink for now
-      setColor(primaryColors[stageTwoData]); //setColor(pinkColors[stageOneData]);
-    } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5] * 10)) {//show darkness with a little flower bit
+    if (puzzleStarted) {
+      if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
+        //TODO: take into account color palette, defaulting to pink for now
+        setColor(primaryColors[stageTwoData]); //setColor(pinkColors[stageOneData]);
+      } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5] * 10)) {//show darkness with a little flower bit
+        setColor(OFF);
+        setColorOnFace(dim(GREEN, 100), centerFace);
+      } else {//show the first stage of the puzzle
+        setColor(primaryColors[stageOneData]);
+      }
+    } else {
       setColor(OFF);
       setColorOnFace(dim(GREEN, 100), centerFace);
-    } else {//show the first stage of the puzzle
-      setColor(primaryColors[stageOneData]);
     }
   }
 
