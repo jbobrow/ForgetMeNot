@@ -303,6 +303,14 @@ void answerLoop() {
             gameState = WAITING;
           } else if (gameState == PLAYING_PUZZLE) {
             gameState = CENTER;
+            //determine score incrementing
+            if (neighborAnswer == CORRECT) {
+              //increment the score!
+              currentPuzzleLevel++;
+            } else {
+              currentPuzzleLevel = 0;
+            }
+
           }
         }
       }
@@ -380,6 +388,9 @@ void centerDisplay() {
         setColor(YELLOW);
         setColorOnFace(WHITE, random(5));
       }
+
+//      //TEMP SCORE DISPLAY
+//      setColorOnFace(BLUE, currentPuzzleLevel % 6);
       break;
     case SENDING:
       setColor(YELLOW);
