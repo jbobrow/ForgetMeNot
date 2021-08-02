@@ -8,10 +8,9 @@ byte answerState = INERT;
 byte centerFace = 0;
 
 //PACKET ARRANGEMENT: puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
-byte showTime = 500;
-byte darkTime = 200;
-byte petalPacketStandard[6] = {0, 0, 0, 0, showTime, darkTime};
-byte petalPacketPrime[6] = {0, 0, 0, 1, showTime, darkTime};
+uint16_t showTime[6] = {5000, 5000, 5000, 5000, 5000, 5000};
+uint16_t darkTime[6] = {2000, 2000, 2000, 2000, 2000, 2000};
+byte puzzlePacket[6] = {0,0,0,0,0,0};
 
 byte currentPuzzleLevel = 0;
 Timer puzzleTimer;
@@ -44,7 +43,6 @@ Timer bloomTimer;
 #define GREEN_HUE 77
 #define YELLOW_HUE 42
 
-
 //Puzzle levels
 // byte puzzleInfo[6] = {puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime};
 
@@ -53,7 +51,7 @@ Timer bloomTimer;
 // animationPetlas: a basic animation clockwise or counterclockwise on each petal... one changes
 // globalPetals: a
 enum puzzleType {colorPetals, locationPetals, animationPetals, globalPetals,
-                 flashPetals, changeingPetals, animationPetals2, numPetals
+                 flashPetals, changingPetals, animationPetals2, numPetals
                 };
 enum puzzlePallette  {primary, pink, blue};
 
@@ -176,9 +174,11 @@ void centerLoop() {
       FOREACH_FACE(f) {
         if (whoPlaying[f] == false) {
           if (f == answerFace) {
-            sendDatagramOnFace( &petalPacketPrime, sizeof(petalPacketPrime), f);
+            puzzlePacket[3] = 1;
+            sendDatagramOnFace( &puzzlePacket, sizeof(puzzlePacket), f);
           } else {
-            sendDatagramOnFace( &petalPacketStandard, sizeof(petalPacketStandard), f);
+            puzzlePacket[3] = 0;
+            sendDatagramOnFace( &puzzlePacket, sizeof(puzzlePacket), f);
           }
         }
       }
@@ -204,16 +204,22 @@ void centerLoop() {
 void generatePuzzle() {
 
   //TODO: difficulty algorithm
-  //needs to choose a puzzle type, a color scheme, set the timers, and choose an answer
-
-
+  //needs to choose a puzzle type, a color scheme, difficulty, choose an answer, set show time, and dark time
+  
+  // based on level, choose a puzzle
+  // choose a puzzle type
+  // choose a puzzle difficulty
+  // choose{puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime};
+  
   answerFace = random(5);//which face will have the correct answer?
 
   FOREACH_FACE(f) {
     if (f == answerFace) {
-      sendDatagramOnFace( &petalPacketPrime, sizeof(petalPacketPrime), f);
+      puzzlePacket[3] = 1;  // isAnswer = true
+      sendDatagramOnFace( &puzzlePacket, sizeof(puzzlePacket), f);
     } else {
-      sendDatagramOnFace( &petalPacketStandard, sizeof(petalPacketStandard), f);
+      puzzlePacket[3] = 0; // is Answer = false;
+      sendDatagramOnFace( &puzzlePacket, sizeof(puzzlePacket), f);
     }
   }
 }
@@ -249,7 +255,7 @@ void pieceLoop() {
     //start the puzzle if the center wants me to start
     if (puzzleTimer.isExpired() && getGameState(getLastValueReceivedOnFace(centerFace)) == PLAYING_PUZZLE && puzzleStarted == false) {//I have not started the puzzle, but the center wants me to
       //BEGIN SHOWING THE PUZZLE!
-      puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5]) * 10);//the timing within the datagram is reduced
+      puzzleTimer.set(showTime[puzzleInfo[4]] + darkTime[puzzleInfo[5]]);//the timing within the datagram is reduced
       puzzleStarted = true;
     }
 
@@ -425,13 +431,12 @@ void pieceDisplay() {
   } else {//show the puzzle
     if (puzzleStarted) {
       if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
-        //TODO: take into account color palette, defaulting to pink for now
-        setColor(primaryColors[stageTwoData]); //setColor(pinkColors[stageOneData]);
-      } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5] * 10)) {//show darkness with a little flower bit
+        displayStage(stageTwoData);
+      } else if (puzzleTimer.getRemaining() <= (darkTime[puzzleInfo[5]])) {//show darkness with a little flower bit
         setColor(OFF);
         setColorOnFace(dim(GREEN, 100), centerFace);
       } else {//show the first stage of the puzzle
-        setColor(primaryColors[stageOneData]);
+        displayStage(stageOneData);
       }
     } else {
       setColor(OFF);
@@ -455,6 +460,42 @@ void pieceDisplay() {
   //      setColorOnFace(BLUE, oppFace);
   //      break;
   //  }
+}
+
+void displayStage( byte stage ) {
+  //TODO: take into account color palette, defaulting to pink for now
+  //puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
+  switch(puzzleInfo[0]) {
+    
+    case colorPetals:
+      {
+        if(puzzleInfo[2] < 2) {
+          setColor(primaryColors[stage]); 
+        }
+      }
+      break;
+    
+    case locationPetals: 
+      break;
+    
+    case animationPetals: 
+      break;
+    
+    case globalPetals: 
+      break;
+    
+    case flashPetals: 
+      break;
+    
+    case changingPetals: 
+      break;
+    
+    case animationPetals2: 
+      break;
+    
+    case numPetals: 
+      break;
+  }
 }
 
 ////CONVENIENCE FUNCTIONS
