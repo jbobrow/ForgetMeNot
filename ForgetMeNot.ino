@@ -462,7 +462,7 @@ void pieceDisplay() {
   //  }
 }
 
-void displayStage( byte stage ) {
+void displayStage( byte stageData ) {
   //TODO: take into account color palette, defaulting to pink for now
   //puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
   switch(puzzleInfo[0]) {
@@ -470,7 +470,7 @@ void displayStage( byte stage ) {
     case colorPetals:
       {
         if(puzzleInfo[2] < 2) {
-          setColor(primaryColors[stage]); 
+          setColor(primaryColors[stageData]); 
         }
       }
       break;
