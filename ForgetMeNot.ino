@@ -17,6 +17,9 @@ Timer puzzleTimer;
 bool puzzleStarted = false;
 Timer answerTimer;
 
+byte puzzleArray[60] =     {0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 2, 2, 1, 0, 2, 3, 3, 2, 0, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3};
+byte difficultyArray[60] = {1, 1, 1, 1, 2, 1, 1, 2, 1, 2, 1, 1, 1, 2, 2, 1, 1, 2, 3, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4};
+
 //byte petalHues[4] = {131, 159, 180, 223};//light blue, dark blue, violet, pink
 
 #define PINK2 makeColorRGB(255,50,100)
@@ -35,7 +38,7 @@ Timer answerTimer;
 
 Color pinkColors[6] = {PINK1, PINK2, PINK3, PINK4, PINK5, PINK6};
 Color blueColors[6] = {BLUE1, BLUE2, BLUE3, BLUE4, BLUE5, BLUE6};
-Color primaryColors[4] = {RED, YELLOW, GREEN, BLUE};
+Color primaryColors[6] = {RED, ORANGE, YELLOW, GREEN, CYAN, BLUE};
 
 bool canBloom = false;
 Timer bloomTimer;
@@ -202,44 +205,26 @@ void centerLoop() {
 
 void generatePuzzle() {
 
-  //TODO: difficulty algorithm
-
-  // based on LEVEL, choose a puzzle
-  //  choose a puzzle type
-  //  choose a puzzle difficulty
+  // based on LEVEL, create a puzzle
   //  choose{puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime};
-  if (currentPuzzleLevel <= 5) {
-    // simple color
-  }
-  else if (currentPuzzleLevel == 6) {
-    // first direction
-  }
-  else if (currentPuzzleLevel > 6 && currentPuzzleLevel <= 11 ) {
-    //
-  }
-  else if (currentPuzzleLevel == 12) {
-    // second direction
-  }
-  else if (currentPuzzleLevel > 12 && currentPuzzleLevel <= 14 ) {
-    //
-  }
-  else if (currentPuzzleLevel == 15) {
-    // third direction
-  }
-  else if (currentPuzzleLevel > 15 && currentPuzzleLevel <= 17 ) {
 
-  }
-  else if (currentPuzzleLevel == 18) {
-    // first animation
-  }
-  else if (currentPuzzleLevel > 18 && currentPuzzleLevel <= 23 ) {
+  //  lookup puzzle type
+  puzzlePacket[0] = puzzleArray[currentPuzzleLevel];
 
-  }
-  else if (currentPuzzleLevel == 24) {
-    // second animation
-  }
+  //  choose a puzzle palette
+  puzzlePacket[1] = 0;//TODO: multiple palettes
 
-  answerFace = random(5);//which face will have the correct answer?
+  //  lookup puzzle difficulty
+  puzzlePacket[2] = difficultyArray[currentPuzzleLevel];
+
+  //  map showTime
+  puzzlePacket[4] = 2000;//TODO: map function
+
+  //  map darkTime
+  puzzlePacket[5] = 500;//TODO: map function
+
+  //answerFace = random(5);//which face will have the correct answer?
+  answerFace = 0;//DEBUG MODE - ALWAYS THE SAME ANSWER FACE
 
   FOREACH_FACE(f) {
     if (f == answerFace) {
@@ -283,7 +268,7 @@ void pieceLoop() {
     //start the puzzle if the center wants me to start
     if (puzzleTimer.isExpired() && getGameState(getLastValueReceivedOnFace(centerFace)) == PLAYING_PUZZLE && puzzleStarted == false) {//I have not started the puzzle, but the center wants me to
       //BEGIN SHOWING THE PUZZLE!
-      puzzleTimer.set(showTime[puzzleInfo[4]] + darkTime[puzzleInfo[5]]);//the timing within the datagram is reduced
+      puzzleTimer.set(puzzleInfo[4] + puzzleInfo[5]);//the timing within the datagram is reduced
       puzzleStarted = true;
     }
 
@@ -306,18 +291,43 @@ void pieceLoop() {
 }
 
 byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
-  if (stage == 1) {
-    //TODO: more complicated build here
-    return (random(3)); //return (random(5));
+  if (stage == 1) {//determine the first stage - pretty much always a number 0-5, but in duoPetal it's a little more complicated
+    if (puzzType == 3) {//special duo petal time!
+      //choose a random interior color
+      byte interior = random(5) * 10;
+      //so based on the difficulty, we then choose another color
+      byte distance = 5 - puzzDiff;
+
+      byte exterior = 0;
+      bool goRight = random(1);
+      if (goRight) {
+        exterior = (interior + distance) % 6;
+      } else {
+        exterior = (interior + 6 - distance) % 6;
+      }
+      return ((interior * 10) + exterior);
+
+    } else {//every other puzzle just chooses a random number 0-5
+      return (random(5));
+    }
+
   } else {//only change answer if amAnswer
-    if (amAnswer) {
-      //TODO: need to consider difficulty level here
-      //return ((stageOneData + random(2) + 1) % 4); // moded for 4 color puzzle
-      do {
-        stageTwoData = random(3);
-      } while ( stageTwoData == stageOneData);
-      return (stageTwoData);
-    } else {
+    if (amAnswer) {//I gotta return a different value
+
+      if (puzzType = 3) { //this is a duo petal, so we gotta reverse it
+        byte newExterior = stageOneData / 10;
+        byte newInterior = stageOneData % 10;
+        return ((newInterior * 10) + newExterior);
+      } else {//all other puzzles, just decide how far to rotate in the spectrum
+        byte distance = 5 - puzzDiff;
+        bool goRight = random(1);
+        if (goRight) {
+          return (stageOneData + distance);
+        } else {
+          return (stageOneData + 6 - distance);
+        }
+      }
+    } else {//if you are not the answer, just return the stage one data
       return (stageOneData);
     }
   }
@@ -432,6 +442,7 @@ void centerDisplay() {
       break;
     case PLAYING_PUZZLE:
       setColor(YELLOW);
+      setColorOnFace(WHITE, 0);//DEBUG MODE - INDICATING ANSWER
       break;
   }
   //setColor(makeColorHSB(YELLOW_HUE, 255, 255));
@@ -461,7 +472,7 @@ void pieceDisplay() {
     if (puzzleStarted) {
       if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
         displayStage(stageTwoData);
-      } else if (puzzleTimer.getRemaining() <= (darkTime[puzzleInfo[5]])) {//show darkness with a little flower bit
+      } else if (puzzleTimer.getRemaining() <= puzzleInfo[5]) {//show darkness with a little flower bit
         setColor(OFF);
         setColorOnFace(dim(GREEN, 100), centerFace);
       } else {//show the first stage of the puzzle
@@ -491,28 +502,36 @@ void pieceDisplay() {
   //  }
 }
 
+#define ROTATION_PACE 100
+
 void displayStage( byte stageData ) {
   //TODO: take into account color palette, defaulting to basics for now
   //puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
   switch (puzzleInfo[0]) {
-
     case colorPetals:
-      {
-        if (puzzleInfo[2] < 2) {
-          setColor(primaryColors[stageData]);
+      setColor(primaryColors[stageData]);
+      break;
+    case locationPetals://dark, with a single lit face
+      setColor(OFF);
+      setColorOnFace(WHITE, stageData);
+      break;
+    case duoPetals:
+      setColor(primaryColors[stageData / 10]);//setting the interior color
+      setColorOnFace(primaryColors[stageData % 10], (centerFace + 2) % 6);
+      setColorOnFace(primaryColors[stageData % 10], (centerFace + 3) % 6);
+      setColorOnFace(primaryColors[stageData % 10], (centerFace + 4) % 6);
+      break;
+    case rotationPetals:
+      { //I need to do this because I'm gonna make a byte
+        setColor(OFF);
+        byte onFace = 0;
+        if (stageData == 0) {
+          onFace = 5 - ((millis() / ROTATION_PACE) % 6);
+        } else {
+          onFace = (millis() / ROTATION_PACE) % 6;
         }
       }
       break;
-
-    case locationPetals:
-      break;
-
-    case duoPetals:
-      break;
-
-    case rotationPetals:
-      break;
-
   }
 }
 
