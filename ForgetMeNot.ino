@@ -10,7 +10,7 @@ byte centerFace = 0;
 //PACKET ARRANGEMENT: puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
 uint16_t showTime[6] = {5000, 5000, 5000, 5000, 5000, 5000};
 uint16_t darkTime[6] = {2000, 2000, 2000, 2000, 2000, 2000};
-byte puzzlePacket[6] = {0,0,0,0,0,0};
+byte puzzlePacket[6] = {0, 0, 0, 0, 0, 0};
 
 byte currentPuzzleLevel = 0;
 Timer puzzleTimer;
@@ -50,9 +50,8 @@ Timer bloomTimer;
 // locationPetals:  one side on each petal is lit, and changes position
 // animationPetlas: a basic animation clockwise or counterclockwise on each petal... one changes
 // globalPetals: a
-enum puzzleType {colorPetals, locationPetals, animationPetals, globalPetals,
-                 flashPetals, changingPetals, animationPetals2, numPetals
-                };
+enum puzzleType {colorPetals, locationPetals, duoPetals, rotationPetals};
+
 enum puzzlePallette  {primary, pink, blue};
 
 // beginner: pick from two colours
@@ -204,12 +203,12 @@ void centerLoop() {
 void generatePuzzle() {
 
   //TODO: difficulty algorithm
-    
+
   // based on LEVEL, choose a puzzle
   //  choose a puzzle type
   //  choose a puzzle difficulty
   //  choose{puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime};
-  if(currentPuzzleLevel <= 5) {
+  if (currentPuzzleLevel <= 5) {
     // simple color
   }
   else if (currentPuzzleLevel == 6) {
@@ -228,7 +227,7 @@ void generatePuzzle() {
     // third direction
   }
   else if (currentPuzzleLevel > 15 && currentPuzzleLevel <= 17 ) {
-    
+
   }
   else if (currentPuzzleLevel == 18) {
     // first animation
@@ -398,12 +397,13 @@ void answerLoop() {
 void setupDisplay() {
   if (canBloom) {
 
-    byte bloomProgress = 255 - map(bloomTimer.getRemaining(), 0, BLOOM_TIME, 0, 255);
+    byte bloomProgress = map(bloomTimer.getRemaining(), 0, BLOOM_TIME, 0, 255);
 
-    byte bloomHue = map(bloomProgress, 0, 255, GREEN_HUE, YELLOW_HUE);
-    byte bloomBri = map(bloomProgress, 0, 255, 100, 255);
+    byte bloomHue = map(bloomProgress, 0, 255, YELLOW_HUE, GREEN_HUE);
+    byte bloomBri = map(255 - bloomProgress, 0, 255, 100, 255);
 
     setColor(makeColorHSB(bloomHue, 255, bloomBri));
+    setColorOnFace(dim(WHITE, bloomBri), random(5));
   } else {
     setColor(makeColorHSB(GREEN_HUE, 255, 100));
   }
@@ -424,8 +424,8 @@ void centerDisplay() {
         setColorOnFace(WHITE, random(5));
       }
 
-//      //TEMP SCORE DISPLAY
-//      setColorOnFace(BLUE, currentPuzzleLevel % 6);
+      //      //TEMP SCORE DISPLAY
+      //      setColorOnFace(BLUE, currentPuzzleLevel % 6);
       break;
     case SENDING:
       setColor(YELLOW);
@@ -492,38 +492,27 @@ void pieceDisplay() {
 }
 
 void displayStage( byte stageData ) {
-  //TODO: take into account color palette, defaulting to pink for now
+  //TODO: take into account color palette, defaulting to basics for now
   //puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
-  switch(puzzleInfo[0]) {
-    
+  switch (puzzleInfo[0]) {
+
     case colorPetals:
       {
-        if(puzzleInfo[2] < 2) {
-          setColor(primaryColors[stageData]); 
+        if (puzzleInfo[2] < 2) {
+          setColor(primaryColors[stageData]);
         }
       }
       break;
-    
-    case locationPetals: 
+
+    case locationPetals:
       break;
-    
-    case animationPetals: 
+
+    case duoPetals:
       break;
-    
-    case globalPetals: 
+
+    case rotationPetals:
       break;
-    
-    case flashPetals: 
-      break;
-    
-    case changingPetals: 
-      break;
-    
-    case animationPetals2: 
-      break;
-    
-    case numPetals: 
-      break;
+
   }
 }
 
