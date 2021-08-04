@@ -204,13 +204,42 @@ void centerLoop() {
 void generatePuzzle() {
 
   //TODO: difficulty algorithm
-  //needs to choose a puzzle type, a color scheme, difficulty, choose an answer, set show time, and dark time
-  
-  // based on level, choose a puzzle
-  // choose a puzzle type
-  // choose a puzzle difficulty
-  // choose{puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime};
-  
+    
+  // based on LEVEL, choose a puzzle
+  //  choose a puzzle type
+  //  choose a puzzle difficulty
+  //  choose{puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime};
+  if(currentPuzzleLevel <= 5) {
+    // simple color
+  }
+  else if (currentPuzzleLevel == 6) {
+    // first direction
+  }
+  else if (currentPuzzleLevel > 6 && currentPuzzleLevel <= 11 ) {
+    //
+  }
+  else if (currentPuzzleLevel == 12) {
+    // second direction
+  }
+  else if (currentPuzzleLevel > 12 && currentPuzzleLevel <= 14 ) {
+    //
+  }
+  else if (currentPuzzleLevel == 15) {
+    // third direction
+  }
+  else if (currentPuzzleLevel > 15 && currentPuzzleLevel <= 17 ) {
+    
+  }
+  else if (currentPuzzleLevel == 18) {
+    // first animation
+  }
+  else if (currentPuzzleLevel > 18 && currentPuzzleLevel <= 23 ) {
+
+  }
+  else if (currentPuzzleLevel == 24) {
+    // second animation
+  }
+
   answerFace = random(5);//which face will have the correct answer?
 
   FOREACH_FACE(f) {
