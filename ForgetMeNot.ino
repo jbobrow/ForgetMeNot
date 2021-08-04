@@ -294,7 +294,7 @@ byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
   if (stage == 1) {//determine the first stage - pretty much always a number 0-5, but in duoPetal it's a little more complicated
     if (puzzType == duoPetals) {//special duo petal time!
       //choose a random interior color
-      byte interior = random(5) * 10;
+      byte interior = random(5);
       //so based on the difficulty, we then choose another color
       byte distance = 5 - puzzDiff;
 
@@ -516,10 +516,15 @@ void displayStage( byte stageData ) {
       setColorOnFace(WHITE, stageData);
       break;
     case duoPetals:
-      setColor(primaryColors[stageData / 10]);//setting the interior color
-      setColorOnFace(primaryColors[stageData % 10], (centerFace + 2) % 6);
-      setColorOnFace(primaryColors[stageData % 10], (centerFace + 3) % 6);
-      setColorOnFace(primaryColors[stageData % 10], (centerFace + 4) % 6);
+      {
+        byte interiorColor = (stageData / 10);
+        setColor(primaryColors[interiorColor]);//setting the interior color
+
+        byte exteriorColor = (stageData % 10);
+        setColorOnFace(primaryColors[exteriorColor], (centerFace + 2) % 6);
+        setColorOnFace(primaryColors[exteriorColor], (centerFace + 3) % 6);
+        setColorOnFace(primaryColors[exteriorColor], (centerFace + 4) % 6);
+      }
       break;
     case rotationPetals:
       { //I need to do this because I'm gonna make a byte
