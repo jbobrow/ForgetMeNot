@@ -292,7 +292,7 @@ void pieceLoop() {
 
 byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
   if (stage == 1) {//determine the first stage - pretty much always a number 0-5, but in duoPetal it's a little more complicated
-    if (puzzType == 3) {//special duo petal time!
+    if (puzzType == duoPetals) {//special duo petal time!
       //choose a random interior color
       byte interior = random(5) * 10;
       //so based on the difficulty, we then choose another color
@@ -314,7 +314,7 @@ byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
   } else {//only change answer if amAnswer
     if (amAnswer) {//I gotta return a different value
 
-      if (puzzType = 3) { //this is a duo petal, so we gotta reverse it
+      if (puzzType == duoPetals) { //this is a duo petal, so we gotta reverse it
         byte newExterior = stageOneData / 10;
         byte newInterior = stageOneData % 10;
         return ((newInterior * 10) + newExterior);
@@ -322,9 +322,9 @@ byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
         byte distance = 5 - puzzDiff;
         bool goRight = random(1);
         if (goRight) {
-          return (stageOneData + distance);
+          return ((stageOneData + distance) % 6);
         } else {
-          return (stageOneData + 6 - distance);
+          return ((stageOneData + 6 - distance) % 6);
         }
       }
     } else {//if you are not the answer, just return the stage one data
@@ -530,6 +530,8 @@ void displayStage( byte stageData ) {
         } else {
           onFace = (millis() / ROTATION_PACE) % 6;
         }
+
+        setColorOnFace(WHITE, onFace);
       }
       break;
   }
