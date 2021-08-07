@@ -40,6 +40,11 @@ Color pinkColors[6] = {PINK1, PINK2, PINK3, PINK4, PINK5, PINK6};
 Color blueColors[6] = {BLUE1, BLUE2, BLUE3, BLUE4, BLUE5, BLUE6};
 Color primaryColors[6] = {RED, ORANGE, YELLOW, GREEN, CYAN, BLUE};
 
+byte rotationBri[6] = {0, 0, 0, 0, 0, 0};
+byte rotationFace = 0;
+Timer rotationTimer;
+#define ROTATION_RATE 100
+
 bool canBloom = false;
 Timer bloomTimer;
 #define BLOOM_TIME 1000
@@ -268,7 +273,7 @@ void pieceLoop() {
     //start the puzzle if the center wants me to start
     if (puzzleTimer.isExpired() && getGameState(getLastValueReceivedOnFace(centerFace)) == PLAYING_PUZZLE && puzzleStarted == false) {//I have not started the puzzle, but the center wants me to
       //BEGIN SHOWING THE PUZZLE!
-      puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5])*100);//the timing within the datagram is reduced 1/100
+      puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5]) * 100); //the timing within the datagram is reduced 1/100
       puzzleStarted = true;
     }
 
@@ -472,7 +477,7 @@ void pieceDisplay() {
     if (puzzleStarted) {
       if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
         displayStage(stageTwoData);
-      } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5]*100)) {//show darkness with a little flower bit (1/100 reduced)
+      } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5] * 100)) { //show darkness with a little flower bit (1/100 reduced)
         setColor(OFF);
         setColorOnFace(dim(GREEN, 100), centerFace);
       } else {//show the first stage of the puzzle
@@ -528,15 +533,22 @@ void displayStage( byte stageData ) {
       break;
     case rotationPetals:
       { //I need to do this because I'm gonna make a byte
-        setColor(OFF);
-        byte onFace = 0;
-        if (stageData == 0) {
-          onFace = 5 - ((millis() / ROTATION_PACE) % 6);
-        } else {
-          onFace = (millis() / ROTATION_PACE) % 6;
+        if (rotationTimer.isExpired()) {
+          rotationTimer.set(ROTATION_RATE);
+          if (stageData == 0) { // CW Rotation
+            rotationFace = (rotationFace + 1) % 6;
+          } else {  // CCW Rotation
+            rotationFace = (rotationFace + 5) % 6;
+          }
+          rotationBri[rotationFace] = 255;
         }
 
-        setColorOnFace(WHITE, onFace);
+        FOREACH_FACE(f) {
+          if ( rotationBri[f] >= 5 ) {
+            rotationBri[f] -= 5;
+          }
+          setColorOnFace(dim(WHITE, rotationBri[f]), f);
+        }
       }
       break;
   }
@@ -549,5 +561,5 @@ byte getGameState(byte data) {
 }
 
 byte getAnswerState(byte data) {
-  return (data & 7);//returns the 5th and 6th bit
+  return (data & 7);//returns the 4th, 5th and 6th bit
 }
