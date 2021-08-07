@@ -54,11 +54,11 @@ Timer bloomTimer;
 //Puzzle levels
 // byte puzzleInfo[6] = {puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime};
 
-// colorPetals:  color changes on one of the petals
-// locationPetals:  one side on each petal is lit, and changes position
+// COLOR_PETALS:  color changes on one of the petals
+// LOCATION_PETALS:  one side on each petal is lit, and changes position
 // animationPetlas: a basic animation clockwise or counterclockwise on each petal... one changes
 // globalPetals: a
-enum puzzleType {colorPetals, locationPetals, duoPetals, rotationPetals};
+enum puzzleType {COLOR_PETALS, LOCATION_PETALS, DUO_PETALS, ROTATION_PETALS};
 
 enum puzzlePallette  {primary, pink, blue};
 
@@ -297,7 +297,7 @@ void pieceLoop() {
 
 byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
   if (stage == 1) {//determine the first stage - pretty much always a number 0-5, but in duoPetal it's a little more complicated
-    if (puzzType == duoPetals) {//special duo petal time!
+    if (puzzType == DUO_PETALS) {//special duo petal time!
       //choose a random interior color
       byte interior = random(5);
       //so based on the difficulty, we then choose another color
@@ -319,7 +319,7 @@ byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
   } else {//only change answer if amAnswer
     if (amAnswer) {//I gotta return a different value
 
-      if (puzzType == duoPetals) { //this is a duo petal, so we gotta reverse it
+      if (puzzType == DUO_PETALS) { //this is a duo petal, so we gotta reverse it
         byte newExterior = stageOneData / 10;
         byte newInterior = stageOneData % 10;
         return ((newInterior * 10) + newExterior);
@@ -513,14 +513,14 @@ void displayStage( byte stageData ) {
   //TODO: take into account color palette, defaulting to basics for now
   //puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
   switch (puzzleInfo[0]) {
-    case colorPetals:
+    case COLOR_PETALS:
       setColor(primaryColors[stageData]);
       break;
-    case locationPetals://dark, with a single lit face
+    case LOCATION_PETALS://dark, with a single lit face
       setColor(OFF);
       setColorOnFace(WHITE, stageData);
       break;
-    case duoPetals:
+    case DUO_PETALS:
       {
         byte interiorColor = (stageData / 10);
         setColor(primaryColors[interiorColor]);//setting the interior color
@@ -531,7 +531,7 @@ void displayStage( byte stageData ) {
         setColorOnFace(primaryColors[exteriorColor], (centerFace + 4) % 6);
       }
       break;
-    case rotationPetals:
+    case ROTATION_PETALS:
       { //I need to do this because I'm gonna make a byte
         if (rotationTimer.isExpired()) {
           rotationTimer.set(ROTATION_RATE);
