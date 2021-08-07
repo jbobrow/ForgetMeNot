@@ -218,10 +218,10 @@ void generatePuzzle() {
   puzzlePacket[2] = difficultyArray[currentPuzzleLevel];
 
   //  map showTime
-  puzzlePacket[4] = 2000;//TODO: map function
+  puzzlePacket[4] = 20;//TODO: map function (x100... i.e. 20 = 2000ms = 2 seconds)
 
   //  map darkTime
-  puzzlePacket[5] = 500;//TODO: map function
+  puzzlePacket[5] = 5;//TODO: map function (x100... i.e. 5 = 500ms = 0.5 seconds)
 
   //answerFace = random(5);//which face will have the correct answer?
   answerFace = 0;//DEBUG MODE - ALWAYS THE SAME ANSWER FACE
@@ -268,7 +268,7 @@ void pieceLoop() {
     //start the puzzle if the center wants me to start
     if (puzzleTimer.isExpired() && getGameState(getLastValueReceivedOnFace(centerFace)) == PLAYING_PUZZLE && puzzleStarted == false) {//I have not started the puzzle, but the center wants me to
       //BEGIN SHOWING THE PUZZLE!
-      puzzleTimer.set(puzzleInfo[4] + puzzleInfo[5]);//the timing within the datagram is reduced
+      puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5])*100);//the timing within the datagram is reduced 1/100
       puzzleStarted = true;
     }
 
@@ -472,7 +472,7 @@ void pieceDisplay() {
     if (puzzleStarted) {
       if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
         displayStage(stageTwoData);
-      } else if (puzzleTimer.getRemaining() <= puzzleInfo[5]) {//show darkness with a little flower bit
+      } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5]*100)) {//show darkness with a little flower bit (1/100 reduced)
         setColor(OFF);
         setColorOnFace(dim(GREEN, 100), centerFace);
       } else {//show the first stage of the puzzle
