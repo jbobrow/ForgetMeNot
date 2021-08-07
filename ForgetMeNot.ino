@@ -507,8 +507,6 @@ void pieceDisplay() {
   //  }
 }
 
-#define ROTATION_PACE 100
-
 void displayStage( byte stageData ) {
   //TODO: take into account color palette, defaulting to basics for now
   //puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
