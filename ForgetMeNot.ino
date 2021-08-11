@@ -275,6 +275,7 @@ void pieceLoop() {
       //BEGIN SHOWING THE PUZZLE!
       puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5]) * 100); //the timing within the datagram is reduced 1/100
       puzzleStarted = true;
+      rotationFace = centerFace;
     }
 
     if (buttonSingleClicked()) {
@@ -309,6 +310,8 @@ byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
         exterior = (interior + 6 - distance) % 6;
       }
       return ((interior * 10) + exterior);
+    } else if (puzzType == ROTATION_PETALS) {
+      return (random(1));
 
     } else {//every other puzzle just chooses a random number 0-5
       return (random(5));
@@ -321,6 +324,13 @@ byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
         byte newExterior = stageOneData / 10;
         byte newInterior = stageOneData % 10;
         return ((newInterior * 10) + newExterior);
+
+      } else if (puzzType == ROTATION_PETALS) {//just swap from 0 to 1 and vice versa
+        if (stageOneData == 0) {
+          return (1);
+        } else {
+          return (0);
+        }
       } else {//all other puzzles, just decide how far to rotate in the spectrum
         byte distance = 5 - puzzDiff;
         bool goRight = random(1);
@@ -445,7 +455,7 @@ void centerDisplay() {
       break;
     case PLAYING_PUZZLE:
       setColor(YELLOW);
-      //setColorOnFace(WHITE, 0);//DEBUG MODE - INDICATING ANSWER
+      //setColorOnFace(WHITE, answerFace);//DEBUG MODE - INDICATING ANSWER
       break;
   }
   //setColor(makeColorHSB(YELLOW_HUE, 255, 255));
