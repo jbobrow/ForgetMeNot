@@ -17,6 +17,8 @@ Timer puzzleTimer;
 bool puzzleStarted = false;
 Timer answerTimer;
 
+bool isScoreboard = false;
+
 byte puzzleArray[60] =     {0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 2, 2, 1, 0, 2, 3, 3, 2, 0, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3};
 byte difficultyArray[60] = {1, 1, 1, 1, 2, 1, 1, 2, 1, 2, 1, 1, 1, 2, 2, 1, 1, 2, 3, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4};
 
@@ -180,6 +182,9 @@ void centerLoop() {
       //who needs a datagram again?
       FOREACH_FACE(f) {
         if (whoPlaying[f] == false) {
+          //update puzzlePacket[5] to reflect the current face
+          puzzlePacket[5] = f;
+
           if (f == answerFace) {
             puzzlePacket[3] = 1;
             sendDatagramOnFace( &puzzlePacket, sizeof(puzzlePacket), f);
@@ -232,6 +237,8 @@ void generatePuzzle() {
   //answerFace = 0;//DEBUG MODE - ALWAYS THE SAME ANSWER FACE
 
   FOREACH_FACE(f) {
+    //update puzzlePacket[5] to reflect the current face
+    puzzlePacket[5] = f;
     if (f == answerFace) {
       puzzlePacket[3] = 1;  // isAnswer = true
       sendDatagramOnFace( &puzzlePacket, sizeof(puzzlePacket), f);
@@ -289,6 +296,7 @@ void pieceLoop() {
         answerState = CORRECT;
       } else {
         answerState = WRONG;
+        isScoreboard = true;
       }
       answerTimer.set(2000);   //set answer timer for display
       gameState = WAITING;
@@ -355,7 +363,7 @@ void answerLoop() {
     FOREACH_FACE(f) {
       if (!isValueReceivedOnFaceExpired(f)) {
         byte neighborAnswer = getAnswerState(getLastValueReceivedOnFace(f));
-        if (neighborAnswer == CORRECT || neighborAnswer == WRONG) {
+        if (neighborAnswer == CORRECT) {
           answerState = neighborAnswer;
           answerTimer.set(2000);
 
@@ -363,24 +371,29 @@ void answerLoop() {
             gameState = WAITING;
           } else if (gameState == PLAYING_PUZZLE) {
             gameState = CENTER;
-            //determine score incrementing
-            if (neighborAnswer == CORRECT) {
-              //increment the score!
-              currentPuzzleLevel++;
-            } else {
-              currentPuzzleLevel = 0;
-            }
-
+            currentPuzzleLevel++;
           }
+        } else if (neighborAnswer == WRONG) {
+          answerState = neighborAnswer;
+          gameState = SETUP;
+          isScoreboard = true;
+          currentPuzzleLevel = 0;
         }
       }
     }
   } else if (answerState == CORRECT || answerState == WRONG) {//just wait to go to RESOLVE
-    if (gameState == PLAYING_PIECE) {
-      gameState = WAITING;
-    } else if (gameState == PLAYING_PUZZLE) {
-      gameState = CENTER;
+
+    if (answerState == CORRECT) {
+      if (gameState == PLAYING_PIECE) {
+        gameState = WAITING;
+      } else if (gameState == PLAYING_PUZZLE) {
+        gameState = CENTER;
+      }
+    } else {
+      gameState = SETUP;
     }
+
+
 
     bool canResolve = true;
     FOREACH_FACE(f) {
@@ -396,10 +409,15 @@ void answerLoop() {
       answerState = RESOLVE;
     }
   } else if (answerState == RESOLVE) {//wait to go to INERT
-    if (gameState == PLAYING_PIECE) {
-      gameState = WAITING;
-    } else if (gameState == PLAYING_PUZZLE) {
-      gameState = CENTER;
+
+    if (answerState == CORRECT) {
+      if (gameState == PLAYING_PIECE) {
+        gameState = WAITING;
+      } else if (gameState == PLAYING_PUZZLE) {
+        gameState = CENTER;
+      }
+    } else {
+      gameState = SETUP;
     }
 
     bool canInert = true;
@@ -432,6 +450,14 @@ void setupDisplay() {
     setColorOnFace(dim(WHITE, bloomBri), random(5));
   } else {
     setColor(makeColorHSB(GREEN_HUE, 255, 100));
+  }
+
+  if (isScoreboard) {
+    FOREACH_FACE(f) {
+      if (f >= puzzleInfo[5]) {
+        setColorOnFace(MAGENTA, f);
+      }
+    }
   }
 }
 
