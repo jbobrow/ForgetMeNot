@@ -222,11 +222,11 @@ void generatePuzzle() {
   //  lookup puzzle difficulty
   puzzlePacket[2] = difficultyArray[currentPuzzleLevel];
 
-  //  map showTime
-  puzzlePacket[4] = 20;//TODO: map function (x100... i.e. 20 = 2000ms = 2 seconds)
+  //  current level
+  puzzlePacket[4] = currentPuzzleLevel;
 
-  //  map darkTime
-  puzzlePacket[5] = 5;//TODO: map function (x100... i.e. 5 = 500ms = 0.5 seconds)
+  //  what face am I
+  puzzlePacket[5] = 0;//this changes when I send it, default to 0 is fine
 
   answerFace = random(5);//which face will have the correct answer?
   //answerFace = 0;//DEBUG MODE - ALWAYS THE SAME ANSWER FACE
@@ -273,7 +273,10 @@ void pieceLoop() {
     //start the puzzle if the center wants me to start
     if (puzzleTimer.isExpired() && getGameState(getLastValueReceivedOnFace(centerFace)) == PLAYING_PUZZLE && puzzleStarted == false) {//I have not started the puzzle, but the center wants me to
       //BEGIN SHOWING THE PUZZLE!
-      puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5]) * 100); //the timing within the datagram is reduced 1/100
+
+      //Ok, so this
+      //puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5]) * 100); //the timing within the datagram is reduced 1/100
+      puzzleTimer.set(7000);//TODO: this needs to change based on level
       puzzleStarted = true;
       rotationFace = centerFace;
     }
@@ -485,7 +488,7 @@ void pieceDisplay() {
     if (puzzleStarted) {
       if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
         displayStage(stageTwoData);
-      } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5] * 100)) { //show darkness with a little flower bit (1/100 reduced)
+      } else if (puzzleTimer.getRemaining() <= 2000) { //show darkness TODO: this should change with each level like the initial setting
         setColor(OFF);
         setColorOnFace(dim(GREEN, 100), centerFace);
       } else {//show the first stage of the puzzle
