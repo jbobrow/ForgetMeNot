@@ -136,8 +136,14 @@ void setupLoop() {
 
   if (canBloom) {
     if (buttonSingleClicked()) {
-      gameState = CENTER;
-      firstPuzzle = true;
+      //react differently if you're a scoreboard
+      if (isScoreboard) {
+        gameState = CENTER;
+        firstPuzzle = false;
+      } else {
+        gameState = CENTER;
+        firstPuzzle = true;
+      }
     }
   }
 }
@@ -389,7 +395,7 @@ void answerLoop() {
       } else if (gameState == PLAYING_PUZZLE) {
         gameState = CENTER;
       }
-    } else {
+    } else if (answerState == WRONG) {
       gameState = SETUP;
     }
 
@@ -416,7 +422,7 @@ void answerLoop() {
       } else if (gameState == PLAYING_PUZZLE) {
         gameState = CENTER;
       }
-    } else {
+    } else if (answerState == WRONG) {
       gameState = SETUP;
     }
 
