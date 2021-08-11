@@ -228,8 +228,8 @@ void generatePuzzle() {
   //  map darkTime
   puzzlePacket[5] = 5;//TODO: map function (x100... i.e. 5 = 500ms = 0.5 seconds)
 
-  //answerFace = random(5);//which face will have the correct answer?
-  answerFace = 0;//DEBUG MODE - ALWAYS THE SAME ANSWER FACE
+  answerFace = random(5);//which face will have the correct answer?
+  //answerFace = 0;//DEBUG MODE - ALWAYS THE SAME ANSWER FACE
 
   FOREACH_FACE(f) {
     if (f == answerFace) {
@@ -279,8 +279,6 @@ void pieceLoop() {
 
     if (buttonSingleClicked()) {
       //is this right or wrong?
-      //TODO: actually have an answer to this. For now... we'll just do a 50/50 split
-      //bool isCorrect = random(1);
       bool isCorrect = (puzzleInfo[3] != 0);
 
       if (isCorrect) {
@@ -447,7 +445,7 @@ void centerDisplay() {
       break;
     case PLAYING_PUZZLE:
       setColor(YELLOW);
-      setColorOnFace(WHITE, 0);//DEBUG MODE - INDICATING ANSWER
+      //setColorOnFace(WHITE, 0);//DEBUG MODE - INDICATING ANSWER
       break;
   }
   //setColor(makeColorHSB(YELLOW_HUE, 255, 255));
