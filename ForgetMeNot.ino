@@ -8,15 +8,17 @@ byte answerState = INERT;
 byte centerFace = 0;
 
 //PACKET ARRANGEMENT: puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
-byte showTime = 500;
-byte darkTime = 200;
-byte petalPacketStandard[6] = {0, 0, 0, 0, showTime, darkTime};
-byte petalPacketPrime[6] = {0, 0, 0, 1, showTime, darkTime};
+uint16_t showTime[6] = {5000, 5000, 5000, 5000, 5000, 5000};
+uint16_t darkTime[6] = {2000, 2000, 2000, 2000, 2000, 2000};
+byte puzzlePacket[6] = {0, 0, 0, 0, 0, 0};
 
 byte currentPuzzleLevel = 0;
 Timer puzzleTimer;
 bool puzzleStarted = false;
 Timer answerTimer;
+
+byte puzzleArray[60] =     {0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 2, 2, 1, 0, 2, 3, 3, 2, 0, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3};
+byte difficultyArray[60] = {1, 1, 1, 1, 2, 1, 1, 2, 1, 2, 1, 1, 1, 2, 2, 1, 1, 2, 3, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4};
 
 //byte petalHues[4] = {131, 159, 180, 223};//light blue, dark blue, violet, pink
 
@@ -36,7 +38,12 @@ Timer answerTimer;
 
 Color pinkColors[6] = {PINK1, PINK2, PINK3, PINK4, PINK5, PINK6};
 Color blueColors[6] = {BLUE1, BLUE2, BLUE3, BLUE4, BLUE5, BLUE6};
-Color primaryColors[4] = {RED, YELLOW, GREEN, BLUE};
+Color primaryColors[6] = {RED, ORANGE, YELLOW, GREEN, CYAN, BLUE};
+
+byte rotationBri[6] = {0, 0, 0, 0, 0, 0};
+byte rotationFace = 0;
+Timer rotationTimer;
+#define ROTATION_RATE 100
 
 bool canBloom = false;
 Timer bloomTimer;
@@ -44,17 +51,15 @@ Timer bloomTimer;
 #define GREEN_HUE 77
 #define YELLOW_HUE 42
 
-
 //Puzzle levels
 // byte puzzleInfo[6] = {puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime};
 
-// colorPetals:  color changes on one of the petals
-// locationPetals:  one side on each petal is lit, and changes position
+// COLOR_PETALS:  color changes on one of the petals
+// LOCATION_PETALS:  one side on each petal is lit, and changes position
 // animationPetlas: a basic animation clockwise or counterclockwise on each petal... one changes
 // globalPetals: a
-enum puzzleType {colorPetals, locationPetals, animationPetals, globalPetals,
-                 flashPetals, changeingPetals, animationPetals2, numPetals
-                };
+enum puzzleType {COLOR_PETALS, LOCATION_PETALS, DUO_PETALS, ROTATION_PETALS};
+
 enum puzzlePallette  {primary, pink, blue};
 
 // beginner: pick from two colours
@@ -176,9 +181,11 @@ void centerLoop() {
       FOREACH_FACE(f) {
         if (whoPlaying[f] == false) {
           if (f == answerFace) {
-            sendDatagramOnFace( &petalPacketPrime, sizeof(petalPacketPrime), f);
+            puzzlePacket[3] = 1;
+            sendDatagramOnFace( &puzzlePacket, sizeof(puzzlePacket), f);
           } else {
-            sendDatagramOnFace( &petalPacketStandard, sizeof(petalPacketStandard), f);
+            puzzlePacket[3] = 0;
+            sendDatagramOnFace( &puzzlePacket, sizeof(puzzlePacket), f);
           }
         }
       }
@@ -203,17 +210,34 @@ void centerLoop() {
 
 void generatePuzzle() {
 
-  //TODO: difficulty algorithm
-  //needs to choose a puzzle type, a color scheme, set the timers, and choose an answer
+  // based on LEVEL, create a puzzle
+  //  choose{puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime};
 
+  //  lookup puzzle type
+  puzzlePacket[0] = puzzleArray[currentPuzzleLevel];
+
+  //  choose a puzzle palette
+  puzzlePacket[1] = 0;//TODO: multiple palettes
+
+  //  lookup puzzle difficulty
+  puzzlePacket[2] = difficultyArray[currentPuzzleLevel];
+
+  //  map showTime
+  puzzlePacket[4] = 20;//TODO: map function (x100... i.e. 20 = 2000ms = 2 seconds)
+
+  //  map darkTime
+  puzzlePacket[5] = 5;//TODO: map function (x100... i.e. 5 = 500ms = 0.5 seconds)
 
   answerFace = random(5);//which face will have the correct answer?
+  //answerFace = 0;//DEBUG MODE - ALWAYS THE SAME ANSWER FACE
 
   FOREACH_FACE(f) {
     if (f == answerFace) {
-      sendDatagramOnFace( &petalPacketPrime, sizeof(petalPacketPrime), f);
+      puzzlePacket[3] = 1;  // isAnswer = true
+      sendDatagramOnFace( &puzzlePacket, sizeof(puzzlePacket), f);
     } else {
-      sendDatagramOnFace( &petalPacketStandard, sizeof(petalPacketStandard), f);
+      puzzlePacket[3] = 0; // is Answer = false;
+      sendDatagramOnFace( &puzzlePacket, sizeof(puzzlePacket), f);
     }
   }
 }
@@ -249,14 +273,13 @@ void pieceLoop() {
     //start the puzzle if the center wants me to start
     if (puzzleTimer.isExpired() && getGameState(getLastValueReceivedOnFace(centerFace)) == PLAYING_PUZZLE && puzzleStarted == false) {//I have not started the puzzle, but the center wants me to
       //BEGIN SHOWING THE PUZZLE!
-      puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5]) * 10);//the timing within the datagram is reduced
+      puzzleTimer.set((puzzleInfo[4] + puzzleInfo[5]) * 100); //the timing within the datagram is reduced 1/100
       puzzleStarted = true;
+      rotationFace = centerFace;
     }
 
     if (buttonSingleClicked()) {
       //is this right or wrong?
-      //TODO: actually have an answer to this. For now... we'll just do a 50/50 split
-      //bool isCorrect = random(1);
       bool isCorrect = (puzzleInfo[3] != 0);
 
       if (isCorrect) {
@@ -272,18 +295,52 @@ void pieceLoop() {
 }
 
 byte determineStages(byte puzzType, byte puzzDiff, byte amAnswer, byte stage) {
-  if (stage == 1) {
-    //TODO: more complicated build here
-    return (random(3)); //return (random(5));
+  if (stage == 1) {//determine the first stage - pretty much always a number 0-5, but in duoPetal it's a little more complicated
+    if (puzzType == DUO_PETALS) {//special duo petal time!
+      //choose a random interior color
+      byte interior = random(5);
+      //so based on the difficulty, we then choose another color
+      byte distance = 5 - puzzDiff;
+
+      byte exterior = 0;
+      bool goRight = random(1);
+      if (goRight) {
+        exterior = (interior + distance) % 6;
+      } else {
+        exterior = (interior + 6 - distance) % 6;
+      }
+      return ((interior * 10) + exterior);
+    } else if (puzzType == ROTATION_PETALS) {
+      return (random(1));
+
+    } else {//every other puzzle just chooses a random number 0-5
+      return (random(5));
+    }
+
   } else {//only change answer if amAnswer
-    if (amAnswer) {
-      //TODO: need to consider difficulty level here
-      //return ((stageOneData + random(2) + 1) % 4); // moded for 4 color puzzle
-      do {
-        stageTwoData = random(3);
-      } while ( stageTwoData == stageOneData);
-      return (stageTwoData);
-    } else {
+    if (amAnswer) {//I gotta return a different value
+
+      if (puzzType == DUO_PETALS) { //this is a duo petal, so we gotta reverse it
+        byte newExterior = stageOneData / 10;
+        byte newInterior = stageOneData % 10;
+        return ((newInterior * 10) + newExterior);
+
+      } else if (puzzType == ROTATION_PETALS) {//just swap from 0 to 1 and vice versa
+        if (stageOneData == 0) {
+          return (1);
+        } else {
+          return (0);
+        }
+      } else {//all other puzzles, just decide how far to rotate in the spectrum
+        byte distance = 5 - puzzDiff;
+        bool goRight = random(1);
+        if (goRight) {
+          return ((stageOneData + distance) % 6);
+        } else {
+          return ((stageOneData + 6 - distance) % 6);
+        }
+      }
+    } else {//if you are not the answer, just return the stage one data
       return (stageOneData);
     }
   }
@@ -363,12 +420,13 @@ void answerLoop() {
 void setupDisplay() {
   if (canBloom) {
 
-    byte bloomProgress = 255 - map(bloomTimer.getRemaining(), 0, BLOOM_TIME, 0, 255);
+    byte bloomProgress = map(bloomTimer.getRemaining(), 0, BLOOM_TIME, 0, 255);
 
-    byte bloomHue = map(bloomProgress, 0, 255, GREEN_HUE, YELLOW_HUE);
-    byte bloomBri = map(bloomProgress, 0, 255, 100, 255);
+    byte bloomHue = map(bloomProgress, 0, 255, YELLOW_HUE, GREEN_HUE);
+    byte bloomBri = map(255 - bloomProgress, 0, 255, 100, 255);
 
     setColor(makeColorHSB(bloomHue, 255, bloomBri));
+    setColorOnFace(dim(WHITE, bloomBri), random(5));
   } else {
     setColor(makeColorHSB(GREEN_HUE, 255, 100));
   }
@@ -389,14 +447,15 @@ void centerDisplay() {
         setColorOnFace(WHITE, random(5));
       }
 
-//      //TEMP SCORE DISPLAY
-//      setColorOnFace(BLUE, currentPuzzleLevel % 6);
+      //      //TEMP SCORE DISPLAY
+      //      setColorOnFace(BLUE, currentPuzzleLevel % 6);
       break;
     case SENDING:
       setColor(YELLOW);
       break;
     case PLAYING_PUZZLE:
       setColor(YELLOW);
+      //setColorOnFace(WHITE, answerFace);//DEBUG MODE - INDICATING ANSWER
       break;
   }
   //setColor(makeColorHSB(YELLOW_HUE, 255, 255));
@@ -425,13 +484,12 @@ void pieceDisplay() {
   } else {//show the puzzle
     if (puzzleStarted) {
       if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
-        //TODO: take into account color palette, defaulting to pink for now
-        setColor(primaryColors[stageTwoData]); //setColor(pinkColors[stageOneData]);
-      } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5] * 10)) {//show darkness with a little flower bit
+        displayStage(stageTwoData);
+      } else if (puzzleTimer.getRemaining() <= (puzzleInfo[5] * 100)) { //show darkness with a little flower bit (1/100 reduced)
         setColor(OFF);
         setColorOnFace(dim(GREEN, 100), centerFace);
       } else {//show the first stage of the puzzle
-        setColor(primaryColors[stageOneData]);
+        displayStage(stageOneData);
       }
     } else {
       setColor(OFF);
@@ -457,6 +515,51 @@ void pieceDisplay() {
   //  }
 }
 
+void displayStage( byte stageData ) {
+  //TODO: take into account color palette, defaulting to basics for now
+  //puzzleType, puzzlePalette, puzzleDifficulty, isAnswer, showTime, darkTime
+  switch (puzzleInfo[0]) {
+    case COLOR_PETALS:
+      setColor(primaryColors[stageData]);
+      break;
+    case LOCATION_PETALS://dark, with a single lit face
+      setColor(OFF);
+      setColorOnFace(WHITE, stageData);
+      break;
+    case DUO_PETALS:
+      {
+        byte interiorColor = (stageData / 10);
+        setColor(primaryColors[interiorColor]);//setting the interior color
+
+        byte exteriorColor = (stageData % 10);
+        setColorOnFace(primaryColors[exteriorColor], (centerFace + 2) % 6);
+        setColorOnFace(primaryColors[exteriorColor], (centerFace + 3) % 6);
+        setColorOnFace(primaryColors[exteriorColor], (centerFace + 4) % 6);
+      }
+      break;
+    case ROTATION_PETALS:
+      { //I need to do this because I'm gonna make a byte
+        if (rotationTimer.isExpired()) {
+          rotationTimer.set(ROTATION_RATE);
+          if (stageData == 0) { // CW Rotation
+            rotationFace = (rotationFace + 1) % 6;
+          } else {  // CCW Rotation
+            rotationFace = (rotationFace + 5) % 6;
+          }
+          rotationBri[rotationFace] = 255;
+        }
+
+        FOREACH_FACE(f) {
+          if ( rotationBri[f] >= 5 ) {
+            rotationBri[f] -= 5;
+          }
+          setColorOnFace(dim(WHITE, rotationBri[f]), f);
+        }
+      }
+      break;
+  }
+}
+
 ////CONVENIENCE FUNCTIONS
 
 byte getGameState(byte data) {
@@ -464,5 +567,5 @@ byte getGameState(byte data) {
 }
 
 byte getAnswerState(byte data) {
-  return (data & 7);//returns the 5th and 6th bit
+  return (data & 7);//returns the 4th, 5th and 6th bit
 }
