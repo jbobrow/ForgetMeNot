@@ -2,6 +2,9 @@ enum gameStates {SETUP, CENTER, SENDING, WAITING, PLAYING_PUZZLE, PLAYING_PIECE,
 byte gameState = SETUP;
 bool firstPuzzle = false;
 
+Timer scoreboardTimer;
+#define SCORE_DURATION 100000
+
 enum answerStates {INERT, CORRECT, WRONG, RESOLVE};
 byte answerState = INERT;
 
@@ -303,6 +306,7 @@ void pieceLoop() {
       } else {
         answerState = WRONG;
         isScoreboard = true;
+        scoreboardTimer.set(SCORE_DURATION);
       }
       answerTimer.set(2000);   //set answer timer for display
       gameState = WAITING;
@@ -383,6 +387,7 @@ void answerLoop() {
           answerState = neighborAnswer;
           gameState = SETUP;
           isScoreboard = true;
+          scoreboardTimer.set(SCORE_DURATION);
           currentPuzzleLevel = 0;
         }
       }
@@ -459,13 +464,22 @@ void setupDisplay() {
   }
 
   if (isScoreboard) {
-    FOREACH_FACE(f) {
-      if (f >= puzzleInfo[5]) {
-        setColorOnFace(MAGENTA, f);
-      }
-    }
+    setColor(dim(WHITE, scoreboardTimer.getRemaining()/10));
+    
+//    FOREACH_FACE(f) {
+//      if (f >= puzzleInfo[5]) {  // show the id of the petal
+//        if (puzzleInfo[3]) { // this petal is the answer
+//          setColorOnFace(ORANGE, f);
+//        }
+//        else {
+//          setColorOnFace(MAGENTA, f);
+//        }
+//      }
+//    }
   }
 }
+
+
 
 void centerDisplay() {
   //so we need some temp graphics
