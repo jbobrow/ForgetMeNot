@@ -123,7 +123,6 @@ void setupLoop() {
     } else {
       if (getGameState(getLastValueReceivedOnFace(f)) == SENDING || getGameState(getLastValueReceivedOnFace(f)) == CENTER) {//this neighbor is telling me to play the game
         gameState = WAITING;
-        puzzleStarted = false;
         centerFace = f;
       }
     }
@@ -283,7 +282,6 @@ void pieceLoop() {
       stageOneData = determineStages(puzzleInfo[0], puzzleInfo[2], puzzleInfo[3], 1);
       stageTwoData = determineStages(puzzleInfo[0], puzzleInfo[2], puzzleInfo[3], 2);
       puzzleStarted = false;
-
     }
   } else if (gameState == PLAYING_PIECE) {//I guess just listen for clicks and signals?
 
@@ -311,7 +309,6 @@ void pieceLoop() {
       }
       answerTimer.set(2000);   //set answer timer for display
       gameState = WAITING;
-      puzzleStarted = false;
     }
   }
 
@@ -381,7 +378,6 @@ void answerLoop() {
 
           if (gameState == PLAYING_PIECE) {
             gameState = WAITING;
-            puzzleStarted = false;
           } else if (gameState == PLAYING_PUZZLE) {
             gameState = CENTER;
             currentPuzzleLevel++;
@@ -400,7 +396,6 @@ void answerLoop() {
     if (answerState == CORRECT) {
       if (gameState == PLAYING_PIECE) {
         gameState = WAITING;
-        puzzleStarted = false;
       } else if (gameState == PLAYING_PUZZLE) {
         gameState = CENTER;
       }
@@ -428,7 +423,6 @@ void answerLoop() {
     if (answerState == CORRECT) {
       if (gameState == PLAYING_PIECE) {
         gameState = WAITING;
-        puzzleStarted = false;
       } else if (gameState == PLAYING_PUZZLE) {
         gameState = CENTER;
       }
