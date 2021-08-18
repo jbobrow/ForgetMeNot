@@ -5,7 +5,7 @@ bool firstPuzzle = false;
 Timer scoreboardTimer;
 #define SCORE_DURATION 100000
 
-enum answerStates {INERT, CORRECT, WRONG, RESOLVE};
+enum answerStates {INERT, CORRECT, WRONG, RESOLVE, VICTORY};
 byte answerState = INERT;
 
 byte centerFace = 0;
@@ -16,6 +16,7 @@ uint16_t darkTime[6] = {2000, 2000, 2000, 2000, 2000, 2000};
 byte puzzlePacket[6] = {0, 0, 0, 0, 0, 0};
 
 byte currentPuzzleLevel = 0;
+#define MAX_LEVEL 59
 Timer puzzleTimer;
 bool puzzleStarted = false;
 Timer answerTimer;
@@ -209,7 +210,7 @@ void centerLoop() {
     //so in here, we just kinda hang out and wait to do... something?
     //I guess here we just listen for RIGHT/WRONG signals?
     //and I guess eventually ERROR HANDLING
-    
+
     //TURN THIS BACK ON TO GET THE DOUBLE-CLICK CHEAT
     //    if (buttonDoubleClicked()) {//here we reveal the correct answer and move forward
     //      answerState = CORRECT;
@@ -304,6 +305,12 @@ void pieceLoop() {
 
       if (isCorrect) {
         answerState = CORRECT;
+
+        //if you are at MAX_LEVEL, you should go into a special kind of correct - VICTORY
+        if (puzzleInfo[4] == MAX_LEVEL) {
+          answerState = VICTORY;
+        }
+
       } else {
         answerState = WRONG;
         isScoreboard = true;
@@ -390,10 +397,16 @@ void answerLoop() {
           isScoreboard = true;
           scoreboardTimer.set(SCORE_DURATION);
           currentPuzzleLevel = 0;
+        } else if (neighborAnswer == VICTORY) {
+          answerState = neighborAnswer;
+          gameState = SETUP;
+          isScoreboard = true;
+          scoreboardTimer.set(SCORE_DURATION);
+          currentPuzzleLevel = 0;
         }
       }
     }
-  } else if (answerState == CORRECT || answerState == WRONG) {//just wait to go to RESOLVE
+  } else if (answerState == CORRECT || answerState == WRONG || answerState == VICTORY) {//just wait to go to RESOLVE
 
     if (answerState == CORRECT) {
       if (gameState == PLAYING_PIECE) {
@@ -402,6 +415,8 @@ void answerLoop() {
         gameState = CENTER;
       }
     } else if (answerState == WRONG) {
+      gameState = SETUP;
+    } else if (answerState == VICTORY) {
       gameState = SETUP;
     }
 
@@ -429,6 +444,8 @@ void answerLoop() {
         gameState = CENTER;
       }
     } else if (answerState == WRONG) {
+      gameState = SETUP;
+    } else if (answerState == VICTORY) {
       gameState = SETUP;
     }
 
@@ -465,7 +482,12 @@ void setupDisplay() {
   }
 
   if (isScoreboard) {
-    setColor(dim(WHITE, scoreboardTimer.getRemaining() / 10));
+
+    if (puzzleInfo[4] == MAX_LEVEL) { //oh, this is a VICTORY scoreboard
+      setColor(dim(YELLOW, scoreboardTimer.getRemaining() / 10));
+    } else {//a regular failure scoreboard
+      setColor(dim(WHITE, scoreboardTimer.getRemaining() / 10));
+    }
 
     //    FOREACH_FACE(f) {
     //      if (f >= puzzleInfo[5]) {  // show the id of the petal
