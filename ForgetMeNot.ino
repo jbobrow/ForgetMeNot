@@ -262,6 +262,7 @@ void pieceLoop() {
   if (gameState == WAITING) {//check for datagrams, then go into playing
     //listen for a packet on master face
     bool datagramReceived = false;
+    puzzleStarted = false;
 
     if (isDatagramReadyOnFace(centerFace)) {//is there a packet?
       if (getDatagramLengthOnFace(centerFace) == 6) {//is it the right length?
