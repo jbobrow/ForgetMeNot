@@ -28,23 +28,14 @@ byte difficultyArray[60] = {1, 1, 1, 1, 2, 1, 1, 2, 1, 2, 1, 1, 1, 2, 2, 1, 1, 2
 
 //byte petalHues[4] = {131, 159, 180, 223};//light blue, dark blue, violet, pink
 
-#define PINK2 makeColorRGB(255,50,100)
-#define PINK4 makeColorRGB(255,100,255)
-#define PINK6 makeColorRGB(255,200,255)
-#define PINK3 makeColorRGB(255,0,100)
-#define PINK1 makeColorRGB(255,50,0)
-#define PINK5 makeColorRGB(150,50,255)
+#define LIGHTPINK makeColorRGB(255,200,255)
+#define SALMON makeColorRGB(255,50,0)
+#define PINK makeColorRGB(255,0,255)
+#define MAUVE makeColorRGB(150,50,255)
+#define INDIGO makeColorRGB(50,100,255)
+#define PERIWINKLE makeColorRGB(0,150,255)
 
-#define BLUE1 makeColorRGB(0,150,255)
-#define BLUE2 makeColorRGB(50,100,255)
-#define BLUE3 makeColorRGB(50,0,255)
-#define BLUE4 makeColorRGB(100,10,255)
-#define BLUE5 makeColorRGB(150,100,255)
-#define BLUE6 makeColorRGB(200,200,255)
-
-Color pinkColors[6] = {PINK1, PINK2, PINK3, PINK4, PINK5, PINK6};
-Color blueColors[6] = {BLUE1, BLUE2, BLUE3, BLUE4, BLUE5, BLUE6};
-Color primaryColors[6] = {RED, ORANGE, YELLOW, GREEN, CYAN, BLUE};
+Color primaryColors[6] = {LIGHTPINK, SALMON, PINK, MAUVE, INDIGO, PERIWINKLE};
 
 byte rotationBri[6] = {0, 0, 0, 0, 0, 0};
 byte rotationFace = 0;
