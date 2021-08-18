@@ -123,6 +123,7 @@ void setupLoop() {
     } else {
       if (getGameState(getLastValueReceivedOnFace(f)) == SENDING || getGameState(getLastValueReceivedOnFace(f)) == CENTER) {//this neighbor is telling me to play the game
         gameState = WAITING;
+        puzzleStarted = false;
         centerFace = f;
       }
     }
@@ -380,6 +381,7 @@ void answerLoop() {
 
           if (gameState == PLAYING_PIECE) {
             gameState = WAITING;
+            puzzleStarted = false;
           } else if (gameState == PLAYING_PUZZLE) {
             gameState = CENTER;
             currentPuzzleLevel++;
@@ -398,6 +400,7 @@ void answerLoop() {
     if (answerState == CORRECT) {
       if (gameState == PLAYING_PIECE) {
         gameState = WAITING;
+        puzzleStarted = false;
       } else if (gameState == PLAYING_PUZZLE) {
         gameState = CENTER;
       }
@@ -425,6 +428,7 @@ void answerLoop() {
     if (answerState == CORRECT) {
       if (gameState == PLAYING_PIECE) {
         gameState = WAITING;
+        puzzleStarted = false;
       } else if (gameState == PLAYING_PUZZLE) {
         gameState = CENTER;
       }
