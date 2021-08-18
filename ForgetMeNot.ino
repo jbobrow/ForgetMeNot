@@ -464,18 +464,18 @@ void setupDisplay() {
   }
 
   if (isScoreboard) {
-    setColor(dim(WHITE, scoreboardTimer.getRemaining()/10));
-    
-//    FOREACH_FACE(f) {
-//      if (f >= puzzleInfo[5]) {  // show the id of the petal
-//        if (puzzleInfo[3]) { // this petal is the answer
-//          setColorOnFace(ORANGE, f);
-//        }
-//        else {
-//          setColorOnFace(MAGENTA, f);
-//        }
-//      }
-//    }
+    setColor(dim(WHITE, scoreboardTimer.getRemaining() / 10));
+
+    //    FOREACH_FACE(f) {
+    //      if (f >= puzzleInfo[5]) {  // show the id of the petal
+    //        if (puzzleInfo[3]) { // this petal is the answer
+    //          setColorOnFace(ORANGE, f);
+    //        }
+    //        else {
+    //          setColorOnFace(MAGENTA, f);
+    //        }
+    //      }
+    //    }
   }
 }
 
@@ -513,38 +513,54 @@ void centerDisplay() {
 
 void pieceDisplay() {
 
-  //TODO: break this into puzzle type specific displays
-  if (gameState == WAITING) {//just waiting
-
-    //setColor(OFF);
-    //setColorOnFace(GREEN, centerFace);
-    if (!answerTimer.isExpired()) {
-      if (answerState == CORRECT) {
-        setColor(GREEN);
-      } else if (answerState == WRONG) {
-        setColor(RED);
-      }
-    } else {
-      setColor(OFF);
-      setColorOnFace(GREEN, centerFace);
-    }
-
-
-  } else {//show the puzzle
-    if (puzzleStarted) {
-      if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
-        displayStage(stageTwoData);
-      } else if (puzzleTimer.getRemaining() <= 2000) { //show darkness TODO: this should change with each level like the initial setting
-        setColor(OFF);
-        setColorOnFace(dim(GREEN, 100), centerFace);
-      } else {//show the first stage of the puzzle
-        displayStage(stageOneData);
-      }
-    } else {
-      setColor(OFF);
-      setColorOnFace(dim(GREEN, 100), centerFace);
-    }
+  switch (gameState) {
+    case WAITING:
+      setColor(YELLOW);
+      break;
+    case PLAYING_PIECE:
+      setColor(GREEN);
+      break;
+    default:
+      break;
   }
+
+  if (puzzleStarted) {
+    setColorOnFace(WHITE, centerFace);
+  } else {
+    setColorOnFace(RED, centerFace);
+  }
+
+  //  if (gameState == WAITING) {//just waiting
+  //
+  //    //setColor(OFF);
+  //    //setColorOnFace(GREEN, centerFace);
+  //    if (!answerTimer.isExpired()) {
+  //      if (answerState == CORRECT) {
+  //        setColor(GREEN);
+  //      } else if (answerState == WRONG) {
+  //        setColor(RED);
+  //      }
+  //    } else {
+  //      setColor(OFF);
+  //      setColorOnFace(GREEN, centerFace);
+  //    }
+  //
+  //
+  //  } else {//show the puzzle
+  //    if (puzzleStarted) {
+  //      if (puzzleTimer.isExpired()) {//show the last stage of the puzzle (forever)
+  //        displayStage(stageTwoData);
+  //      } else if (puzzleTimer.getRemaining() <= 2000) { //show darkness TODO: this should change with each level like the initial setting
+  //        setColor(OFF);
+  //        setColorOnFace(dim(GREEN, 100), centerFace);
+  //      } else {//show the first stage of the puzzle
+  //        displayStage(stageOneData);
+  //      }
+  //    } else {
+  //      setColor(OFF);
+  //      setColorOnFace(dim(GREEN, 100), centerFace);
+  //    }
+  //  }
 
   //temp answer display
   //  byte oppFace = (centerFace + 3) % 6;
