@@ -209,12 +209,13 @@ void centerLoop() {
     //so in here, we just kinda hang out and wait to do... something?
     //I guess here we just listen for RIGHT/WRONG signals?
     //and I guess eventually ERROR HANDLING
-
-    if (buttonDoubleClicked()) {//here we reveal the correct answer and move forward
-      answerState = CORRECT;
-      answerTimer.set(2000);   //set answer timer for display
-      gameState = CENTER;
-    }
+    
+    //TURN THIS BACK ON TO GET THE DOUBLE-CLICK CHEAT
+    //    if (buttonDoubleClicked()) {//here we reveal the correct answer and move forward
+    //      answerState = CORRECT;
+    //      answerTimer.set(2000);   //set answer timer for display
+    //      gameState = CENTER;
+    //    }
 
 
   }
