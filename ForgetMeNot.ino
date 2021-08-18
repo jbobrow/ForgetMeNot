@@ -310,6 +310,7 @@ void pieceLoop() {
       }
       answerTimer.set(2000);   //set answer timer for display
       gameState = WAITING;
+      puzzleStarted = false;
     }
   }
 
